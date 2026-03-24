@@ -7,7 +7,8 @@ file_path = 'export.xml'
 def parse_apple_health_completo(file_path):
     print("A processar dados do Apple Health... Isto pode demorar dependendo do tamanho do ficheiro.")
     
-    # Usamos iterparse para não carregar o XML todo na memória (eficiente para ficheiros grandes)
+    #osvnodnvs<wjviogewnkvs
+    # # Usamos iterparse para não carregar o XML todo na memória (eficiente para ficheiros grandes)
     context = ET.iterparse(file_path, events=("start", "end"))
     
     records_list = []
