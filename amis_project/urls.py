@@ -14,15 +14,13 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('sleep_analysis.urls')), # Isto garante que o Django lê o ficheiro acima
+    path('admin/', admin.site.urls),    # Esta linha "liga" o urls.py da tua app ao projeto principal
+    path('', include('sleep_analysis.urls')), 
 ]
-
-
-
 
 #192.168.240.1

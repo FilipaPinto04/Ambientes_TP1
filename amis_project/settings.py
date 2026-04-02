@@ -117,3 +117,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Garante que a sessão é gravada mesmo em HTTP (localhost)
+SESSION_COOKIE_SECURE = False
+# Força o Django a guardar os dados na sessão
+SESSION_SAVE_EVERY_REQUEST = True
+# Usa o motor de sessões padrão (base de dados)
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
