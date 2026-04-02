@@ -118,9 +118,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# Garante que a sessão é gravada mesmo em HTTP (localhost)
-SESSION_COOKIE_SECURE = False
-# Força o Django a guardar os dados na sessão
+# Permitir que os cookies funcionem em HTTP (localhost) sem HTTPS
+SESSION_COOKIE_SECURE = False 
+CSRF_COOKIE_SECURE = False
+
+# Forçar o Django a escrever no "disco" (DB) mal tu guardas algo na sessão
 SESSION_SAVE_EVERY_REQUEST = True
-# Usa o motor de sessões padrão (base de dados)
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+# Garante que o domínio do cookie é o localhost
+SESSION_COOKIE_DOMAIN = None

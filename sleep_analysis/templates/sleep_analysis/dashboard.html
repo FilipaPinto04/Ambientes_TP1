@@ -2,91 +2,93 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard de Saúde - Filipa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SleepApp</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f0f2f5; font-family: sans-serif; padding-bottom: 80px; }
+        .app-shell { max-width: 500px; margin: 0 auto; background: #fff; min-height: 100vh; }
+        .app-header { background: #1a237e; color: white; padding: 30px 20px; border-radius: 0 0 25px 25px; }
+        .stat-pill { background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 20px; font-size: 13px; }
+        .card-custom { border: none; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 20px 15px; padding: 20px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; 
+                      background: #fff; display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid #ddd; }
+        .nav-link { text-decoration: none; color: #888; font-size: 12px; text-align: center; }
+        .nav-link.active { color: #1a237e; fw-bold; }
+    </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-12 text-center mb-4">
-            <h1>📊 O Meu Dashboard de Saúde</h1>
-            <p class="text-muted">Dados sincronizados do Google Fit</p>
-            <a href="{% url 'google_fit_auth' %}" class="btn btn-primary shadow-sm">
-                🔄 Sincronizar Novos Dados
-            </a>
+<div class="app-shell">
+    <div class="app-header">
+        <div class="d-flex justify-content-between">
+            <span class="fw-bold">Sleep Analysis</span>
+            <a href="{% url 'google_fit_auth' %}" style="text-decoration:none">🔄</a>
+        </div>
+        <h2 class="mt-3 fw-bold">Histórico Semanal</h2>
+        <div class="d-flex gap-2 mt-2">
+            <div class="stat-pill">🌙 {{ horas_sono }}h (Hoje)</div>
+            <div class="stat-pill">💓 {{ bpm_medio|floatformat:0 }} BPM</div>
         </div>
     </div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow border-0">
-                <div class="card-body">
-                    <h5 class="card-title">Passos nas Últimas 24h</h5>
-                    <canvas id="graficoPassos" width="400" height="150"></canvas>
-                </div>
-            </div>
+    <div class="card-custom">
+        <h6 class="fw-bold mb-3">Horas de Sono por Dia</h6>
+        <div style="height: 250px;">
+            <canvas id="weeklyChart"></canvas>
         </div>
     </div>
 
-    <div class="row mt-5 justify-content-center">
-        <div class="col-md-8">
-            <h5 class="mb-3">Registos Detalhados</h5>
-            <table class="table table-hover bg-white shadow-sm rounded">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Hora</th>
-                        <th>Tipo</th>
-                        <th>Valor (Passos)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in registos %}
-                    <tr>
-                        <td>{{ r.timestamp|date:"H:i" }}</td>
-                        <td>{{ r.tipo }}</td>
-                        <td>{{ r.valor|floatformat:0 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-center">Ainda não há dados. Clica em Sincronizar!</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="px-3">
+        <h6 class="fw-bold mb-3">Diagnóstico Recente</h6>
+        {% for item in analise %}
+        <div class="alert alert-danger border-0 rounded-4 shadow-sm mb-2" style="font-size: 14px;">
+            <strong>⚠️ Atenção:</strong> {{ item }}
         </div>
+        {% empty %}
+        <div class="alert alert-success border-0 rounded-4 shadow-sm" style="font-size: 14px;">
+            ✅ <strong>Sono Saudável:</strong> Não detetámos irregularidades graves esta semana.
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="m-3 p-3 rounded-4 border" style="background: #e8eaf6;">
+        <small class="text-primary fw-bold">Dica Bioclimática</small>
+        <p class="mb-0 small text-muted">O sol em Braga nasce às {{ clima.sunrise_format }}. Tente acordar próximo deste horário para regular o cortisol.</p>
     </div>
 </div>
 
-<script>
-    // 3. Lógica do Gráfico
-    const ctx = document.getElementById('graficoPassos').getContext('2d');
-    
-    // Receber dados do Django (usando o filtro |safe para o JS entender)
-    const labels = {{ labels|safe }};
-    const valores = {{ valores|safe }};
+<nav class="bottom-nav shadow">
+    <a href="{% url 'google_fit_auth' %}" class="nav-link active">📊<br>Dashboard</a>
+    <a href="{% url 'doencas' %}" class="nav-link">📚<br>Doenças</a>
+    <a href="{% url 'perfil' %}" class="nav-link">👤<br>Perfil</a>
+</nav>
 
+<script>
+    const ctx = document.getElementById('weeklyChart').getContext('2d');
     new Chart(ctx, {
-        type: 'line', // Podes mudar para 'bar' se preferires barras
+        type: 'bar',
         data: {
-            labels: labels,
+            labels: {{ labels|safe }},
             datasets: [{
-                label: 'Passos por Hora',
-                data: valores,
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.3 // Deixa a linha curvada e elegante
+                data: {{ valores|safe }},
+                backgroundColor: '#3949ab',
+                borderRadius: 10,
+                barThickness: 20
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true
-                }
+                y: { 
+                    beginAtZero: true, 
+                    suggestedMax: 10, // Define o máximo como 10 horas para dar perspectiva
+                    ticks: { stepSize: 2 } 
+                },
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
             }
         }
     });

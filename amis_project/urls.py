@@ -19,8 +19,6 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),    # Esta linha "liga" o urls.py da tua app ao projeto principal
-    path('', include('sleep_analysis.urls')), 
+    path('admin/', admin.site.urls),
+    path('', include('sleep_analysis.urls')), # Inclui as rotas que definimos acima
 ]
-
-#192.168.240.1
