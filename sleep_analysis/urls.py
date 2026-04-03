@@ -18,5 +18,7 @@ urlpatterns = [
     
     # Rotas de Autenticação com Google Fit
     path('google-fit/login/', views.google_fit_auth, name='google_fit_auth'),
+    path('google-fit/auth/', views.google_fit_auth, name='google_fit_auth'),
     path('google-fit/callback/', views.google_fit_callback, name='google_fit_callback'),
 ]
+
