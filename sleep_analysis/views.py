@@ -27,171 +27,151 @@ def home(request):
     return render(request, 'sleep_analysis/home.html')
 
 def google_fit_auth(request):
-    # 1. SE JÁ TEMOS CREDENCIAIS VÁLIDAS, SALTAMOS O LOGIN
-    creds_data = request.session.get('credentials')
-    if creds_data:
-        creds = Credentials(**creds_data)
-        if creds and creds.valid:
-            # Vai direto para o callback, mas avisa que não precisa de novo token
-            return redirect('google_fit_callback')
+    # Força a limpeza para não haver conflitos de 'state' antigo
+    request.session.flush() 
+    
+    client_secrets_path = os.path.join(settings.BASE_DIR, 'client_secret.json')
+    
+    flow = Flow.from_client_secrets_file(
+        client_secrets_path,
+        scopes=SCOPES,
+        redirect_uri='http://127.0.0.1:8000/google-fit/callback/' # Usa 127.0.0.1 como no teu print!
+    )
 
-    # 2. SE NÃO TEMOS, PEDIMOS LOGIN (FLUXO NORMAL)
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        prompt='consent'
+    )
+
+    request.session['oauth_state'] = state
+    # Guarda o verifier, caso contrário o callback não consegue validar o código
+    request.session['code_verifier'] = flow.code_verifier
+    
+    return redirect(authorization_url)
+
+def google_fit_callback(request):
+    # Se chegamos aqui sem o 'state', o user tentou entrar direto na URL. Manda para a Home.
+    state = request.session.get('oauth_state')
+    if not state:
+        return redirect('home')
+
     client_secrets_path = os.path.join(settings.BASE_DIR, 'client_secret.json')
     flow = Flow.from_client_secrets_file(
         client_secrets_path,
         scopes=SCOPES,
-        redirect_uri='http://localhost:8000/google-fit/callback/'
+        state=state,
+        redirect_uri='http://127.0.0.1:8000/google-fit/callback/'
     )
-    # prompt='select_account' em vez de 'consent' torna o login mais rápido
-    authorization_url, state = flow.authorization_url(access_type='offline', prompt='select_account')
-    
-    request.session['oauth_state'] = state
-    request.session['code_verifier'] = flow.code_verifier
-    return redirect(authorization_url)
 
-def google_fit_callback(request):
-    """Recebe o retorno do Google e processa os dados de sono e perfil"""
-    creds_data = request.session.get('credentials')
-    credentials = None 
-
-    # 1. TENTAR USAR CREDENCIAIS QUE JÁ ESTÃO NA SESSÃO
-    if creds_data:
-        from google.oauth2.credentials import Credentials
-        credentials = Credentials(**creds_data)
-        if not credentials.valid:
-            credentials = None 
-
-    # 2. SE NÃO TEMOS CREDENCIAIS, BUSCAMOS NOVO TOKEN
-    if not credentials:
-        state = request.session.get('oauth_state')
-        code_verifier = request.session.get('code_verifier')
-        
-        flow = Flow.from_client_secrets_file(
-            os.path.join(settings.BASE_DIR, 'client_secret.json'),
-            scopes=SCOPES, state=state,
-            redirect_uri='http://localhost:8000/google-fit/callback/'
+    try:
+        flow.fetch_token(
+            authorization_response=request.build_absolute_uri(),
+            code_verifier=request.session.get('code_verifier')
         )
         
-        try:
-            flow.fetch_token(authorization_response=request.build_absolute_uri(), code_verifier=code_verifier)
-            credentials = flow.credentials
-            
-            # GUARDAR NA SESSÃO
-            request.session['credentials'] = {
-                'token': credentials.token,
-                'refresh_token': credentials.refresh_token,
-                'token_uri': credentials.token_uri,
-                'client_id': credentials.client_id,
-                'client_secret': credentials.client_secret,
-                'scopes': credentials.scopes
-            }
-        except Exception as e:
-            print(f"Erro ao obter token: {e}")
-            return redirect('google_fit_auth')
+        # Se chegou aqui, o login FOI UM SUCESSO.
+        credentials = flow.credentials
+        request.session['credentials'] = {
+            'token': credentials.token,
+            'refresh_token': credentials.refresh_token,
+            'token_uri': credentials.token_uri,
+            'client_id': credentials.client_id,
+            'client_secret': credentials.client_secret,
+            'scopes': credentials.scopes
+        }
+        return redirect('dashboard') # Vai para a página de dados final
 
-    # 3. BUSCAR INFORMAÇÃO DO UTILIZADOR (NOME E FOTO) - MÉTODO SEGURO
-    try:
-        import requests
-        user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
-        headers = {'Authorization': f'Bearer {credentials.token}'}
-        info_res = requests.get(user_info_url, headers=headers).json()
-        
-        request.session['user_name'] = info_res.get('name', 'Utilizador')
-        request.session['user_picture'] = info_res.get('picture', '')
     except Exception as e:
-        print(f"Erro ao buscar perfil: {e}")
+        print(f"ERRO CRÍTICO: {e}")
+        # MANDA PARA A HOME COM ERRO, NÃO PARA O LOGIN (isso quebra o loop)
+        return render(request, 'sleep_analysis/home.html', {"erro": "Falha na autenticação Google."})
+
+def buscar_dados_e_renderizar(request, credentials):
+    """Função auxiliar para processar o sono, perfil e clima"""
+    from googleapiclient.discovery import build
+    import requests
+    import datetime
+    import json
+
+    # 1. Perfil (Nome e Foto)
+    try:
+        headers = {'Authorization': f'Bearer {credentials.token}'}
+        info = requests.get("https://www.googleapis.com/oauth2/v2/userinfo", headers=headers).json()
+        request.session['user_name'] = info.get('name', 'Utilizador')
+        request.session['user_picture'] = info.get('picture', '')
+    except:
         request.session['user_name'] = "Utilizador"
 
-    # 4. CONFIGURAR SERVIÇO FITNESS E TEMPO
+    # 2. Google Fit (Sono e BPM)
     fitness_service = build('fitness', 'v1', credentials=credentials)
     now = datetime.datetime.utcnow()
-    start_time = now - datetime.timedelta(days=7)
-    start_iso = start_time.isoformat() + 'Z'
+    start_iso = (now - datetime.timedelta(days=7)).isoformat() + 'Z'
 
-    # --- BUSCAR SESSÕES DE SONO ---
     sessions_res = fitness_service.users().sessions().list(userId='me', startTime=start_iso).execute()
     sessoes_sono = [s for s in sessions_res.get('session', []) if s['activityType'] == 72]
 
     dados_agrupados = {}
     analise_list = []
-    ultimo_bpm_medio = 65 
+    ultimo_bpm_medio = 65
 
     for s in sessoes_sono:
-        dia_label = datetime.datetime.fromtimestamp(int(s['startTimeMillis'])/1000).strftime("%d/%m")
-        duracao_h = (int(s['endTimeMillis']) - int(s['startTimeMillis'])) / 3600000
-        dados_agrupados[dia_label] = dados_agrupados.get(dia_label, 0) + duracao_h
+        dia = datetime.datetime.fromtimestamp(int(s['startTimeMillis'])/1000).strftime("%d/%m")
+        duracao = (int(s['endTimeMillis']) - int(s['startTimeMillis'])) / 3600000
+        dados_agrupados[dia] = dados_agrupados.get(dia, 0) + duracao
 
-    # Ordenar dados para o gráfico
-    labels_ordenados = sorted(dados_agrupados.keys())
-    valores_ordenados = [round(dados_agrupados[d], 1) for d in labels_ordenados]
-    horas_hoje = valores_ordenados[-1] if valores_ordenados else 0
+    labels = sorted(dados_agrupados.keys())
+    valores = [round(dados_agrupados[d], 1) for d in labels]
+    horas_hoje = valores[-1] if valores else 0
 
-    # --- BUSCAR BPM DA ÚLTIMA NOITE ---
     if sessoes_sono:
         ultima = sessoes_sono[-1]
         u_start, u_end = int(ultima['startTimeMillis']), int(ultima['endTimeMillis'])
-        
-        body_bpm = {
+        body = {
             "aggregateBy": [{"dataTypeName": "com.google.heart_rate.bpm"}],
             "bucketByTime": {"durationMillis": u_end - u_start},
-            "startTimeMillis": u_start, 
-            "endTimeMillis": u_end
+            "startTimeMillis": u_start, "endTimeMillis": u_end
         }
         try:
-            res_bpm = fitness_service.users().dataset().aggregate(userId='me', body=body_bpm).execute()
+            res_bpm = fitness_service.users().dataset().aggregate(userId='me', body=body).execute()
             ultimo_bpm_medio = res_bpm['bucket'][0]['dataset'][0]['point'][0]['value'][0]['fpVal']
-        except:
-            pass
+        except: pass
 
-        # Diagnóstico Lusíadas
-        if horas_hoje < 7:
-            analise_list.append(f"Sono insuficiente ({horas_hoje}h). Segundo especialistas, o ideal é entre 7h a 9h.")
-        if ultimo_bpm_medio > 75:
-            analise_list.append("BPM Elevado: Pode indicar má qualidade de sono ou stress físico.")
+        if horas_hoje < 7: analise_list.append(f"Sono insuficiente ({horas_hoje}h).")
+        if ultimo_bpm_medio > 75: analise_list.append("BPM Elevado detetado.")
 
-    # --- DADOS CLIMÁTICOS ---
+    # 3. Clima
+    from .views import get_weather_data # Garante que importa a tua função do clima
     clima = get_weather_data("Braga")
-    if sessoes_sono:
-        fim_sono_ts = int(sessoes_sono[-1]['endTimeMillis']) / 1000
-        if fim_sono_ts > clima['sunrise']:
-            analise_list.append("Fator Luz: Acordou após o nascer do sol, o que pode afetar o ciclo circadiano.")
 
     context = {
-        'labels': json.dumps(labels_ordenados),
-        'valores': json.dumps(valores_ordenados),
+        'labels': json.dumps(labels),
+        'valores': json.dumps(valores),
         'horas_sono': horas_hoje,
-        'bpm_medio': ultimo_bpm_medio,
+        'bpm_medio': round(ultimo_bpm_medio, 1),
         'analise': analise_list,
         'clima': clima
     }
-
     return render(request, 'sleep_analysis/dashboard.html', context)
 
 def dashboard(request):
-    # Procura todos os registos de sono guardados, sem limitar a apenas hoje
-    registos = MetricaSaude.objects.filter(tipo='sleep').order_by('timestamp')
+    # 1. Verificar se temos credenciais na sessão
+    creds_data = request.session.get('credentials')
     
-    dados_agrupados = {}
-    for r in registos:
-        dia = r.timestamp.strftime("%d/%m")
-        # Se guardaste em minutos na DB, converte para horas
-        valor_h = r.valor / 60 if r.valor > 24 else r.valor 
-        dados_agrupados[dia] = dados_agrupados.get(dia, 0) + valor_h
+    if not creds_data:
+        # Se não há credenciais, interrompe o loop e manda para o login
+        return redirect('google_fit_auth')
 
-    labels_ordenados = sorted(dados_agrupados.keys())
-    valores_ordenados = [round(dados_agrupados[d], 1) for d in labels_ordenados]
-
-    # 3. Preparar o contexto igual ao do callback
-    context = {
-        'labels': json.dumps(labels_ordenados),
-        'valores': json.dumps(valores_ordenados),
-        'horas_sono': valores_ordenados[-1] if valores_ordenados else 0,
-        'bpm_medio': 65, # Valor genérico ou busca o último registo de BPM
-        'analise': ["Dados carregados do histórico."],
-        'clima': get_weather_data("Braga")
-    }
-    
-    return render(request, 'sleep_analysis/dashboard.html', context)
+    try:
+        # 2. Reconstruir as credenciais para usar a API
+        credentials = Credentials(**creds_data)
+        
+        # 3. Chamar a função que vai ao Google buscar o que falta
+        # e renderizar o template
+        return buscar_dados_e_renderizar(request, credentials)
+        
+    except Exception as e:
+        print(f"Erro no dashboard: {e}")
+        return redirect('google_fit_auth')
 
 def get_weather_data(city="Braga"):
     api_key = "cd86dc586e079435323b617b2d68184e"
