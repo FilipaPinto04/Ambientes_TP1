@@ -127,3 +127,6 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 # Garante que o domínio do cookie é o localhost
 SESSION_COOKIE_DOMAIN = None
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_ENGINE = 'django.contrib.sessions.backends.db' # Garante que as sessões vão para a DB
