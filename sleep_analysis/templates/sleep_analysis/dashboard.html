@@ -3,96 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SleepApp</title>
+    <title>BioSleep Analysis</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #f0f2f5; font-family: sans-serif; padding-bottom: 80px; }
-        .app-shell { max-width: 500px; margin: 0 auto; background: #fff; min-height: 100vh; }
-        .app-header { background: #1a237e; color: white; padding: 30px 20px; border-radius: 0 0 25px 25px; }
-        .stat-pill { background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 20px; font-size: 13px; }
-        .card-custom { border: none; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin: 20px 15px; padding: 20px; }
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; 
-                      background: #fff; display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid #ddd; }
-        .nav-link { text-decoration: none; color: #888; font-size: 12px; text-align: center; }
-        .nav-link.active { color: #1a237e; fw-bold; }
+        :root { --bg: #050510; --accent: #40c4ff; --gold: #ffca28; }
+        body { background: radial-gradient(circle at top right, #1a1a35, #050510); color: white; font-family: 'Segoe UI', sans-serif; padding-bottom: 110px; }
+        .container-app { max-width: 480px; margin: 0 auto; padding: 20px; }
+        .higiene-notify { background: rgba(255, 202, 40, 0.1); border: 1px solid rgba(255, 202, 40, 0.3); border-radius: 20px; padding: 15px; margin-bottom: 25px; display: flex; gap: 12px; backdrop-filter: blur(10px); }
+        .bento-card { background: rgba(255, 255, 255, 0.05); border-radius: 28px; padding: 22px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 15px; }
+        .score-ring { width: 85px; height: 85px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; transition: 0.5s; }
+        .score-ring::after { content: attr(data-score); position: absolute; width: 70px; height: 70px; background: #0d1430; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; }
+        .mini-pie { width: 42px; height: 42px; border-radius: 50%; background: conic-gradient(var(--c) calc(var(--p) * 1%), rgba(255,255,255,0.1) 0); margin: 0 auto 8px; transition: 0.8s; }
+        .nav-bottom { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; background: rgba(15,15,35,0.95); backdrop-filter: blur(20px); border-radius: 30px; display: flex; justify-content: space-around; padding: 14px; border: 1px solid rgba(255,255,255,0.1); }
+        .nav-link-custom { text-decoration: none; color: #666; font-size: 10px; text-align: center; }
+        .nav-link-custom.active { color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="app-shell">
-    <div class="app-header">
-        <div class="d-flex justify-content-between">
-            <span class="fw-bold">Sleep Analysis</span>
-            <a href="{% url 'google_fit_auth' %}" style="text-decoration:none">🔄</a>
-        </div>
-        <h2 class="mt-3 fw-bold">Histórico Semanal</h2>
-        <div class="d-flex gap-2 mt-2">
-            <div class="stat-pill">🌙 {{ horas_sono }}h (Hoje)</div>
-            <div class="stat-pill">💓 {{ bpm_medio|floatformat:0 }} BPM</div>
+<div class="container-app">
+    <div class="higiene-notify">
+        <span>🌙</span>
+        <div><h6 class="mb-1 fw-bold" style="color: var(--gold); font-size: 13px;">Higiene do Sono</h6><p class="small mb-0 opacity-75">{{ aviso_sono }}</p></div>
+    </div>
+
+    <div class="d-flex justify-content-between mb-4 px-2">
+        <h2 class="fw-bold mb-0" id="txt-dia">--</h2>
+        <div class="text-end"><span class="badge bg-dark border border-secondary">{{ clima.temp }}°C em {{ clima.city }}</span></div>
+    </div>
+
+    <div class="bento-card d-flex align-items-center gap-4">
+        <div id="main-ring" class="score-ring" data-score="0"></div>
+        <div><h4 id="txt-titulo" class="fw-bold mb-1">--</h4><p class="small opacity-50 mb-0">Qualidade Biológica</p></div>
+    </div>
+
+    <div class="row g-2 mb-1">
+        <div class="col-6"><div class="bento-card text-center m-0"><small class="opacity-50" style="font-size: 9px;">Duração</small><h3 class="mb-0 fw-bold"><span id="txt-horas">0</span>h</h3></div></div>
+        <div class="col-6"><div class="bento-card text-center m-0"><small class="opacity-50" style="font-size: 9px;">BPM</small><h3 class="mb-0 fw-bold text-danger" id="txt-bpm">0</h3></div></div>
+    </div>
+
+    <div class="bento-card">
+        <div class="d-flex justify-content-around text-center">
+            <div><div id="pie-profundo" class="mini-pie" style="--c:#7e57c2;"></div><small class="opacity-50" style="font-size: 9px;">Profundo</small><br><span id="txt-profundo" class="fw-bold small">0h</span></div>
+            <div><div id="pie-rem" class="mini-pie" style="--c:#40c4ff;"></div><small class="opacity-50" style="font-size: 9px;">REM</small><br><span id="txt-rem" class="fw-bold small">0h</span></div>
+            <div><div id="pie-leve" class="mini-pie" style="--c:#ffca28;"></div><small class="opacity-50" style="font-size: 9px;">Leve</small><br><span id="txt-leve" class="fw-bold small">0h</span></div>
         </div>
     </div>
 
-    <div class="card-custom">
-        <h6 class="fw-bold mb-3">Horas de Sono por Dia</h6>
-        <div style="height: 250px;">
-            <canvas id="weeklyChart"></canvas>
-        </div>
-    </div>
-
-    <div class="px-3">
-        <h6 class="fw-bold mb-3">Diagnóstico Recente</h6>
-        {% for item in analise %}
-        <div class="alert alert-danger border-0 rounded-4 shadow-sm mb-2" style="font-size: 14px;">
-            <strong>⚠️ Atenção:</strong> {{ item }}
-        </div>
-        {% empty %}
-        <div class="alert alert-success border-0 rounded-4 shadow-sm" style="font-size: 14px;">
-            ✅ <strong>Sono Saudável:</strong> Não detetámos irregularidades graves esta semana.
-        </div>
-        {% endfor %}
-    </div>
-
-    <div class="m-3 p-3 rounded-4 border" style="background: #e8eaf6;">
-        <small class="text-primary fw-bold">Dica Bioclimática</small>
-        <p class="mb-0 small text-muted">O sol em Braga nasce às {{ clima.sunrise_format }}. Tente acordar próximo deste horário para regular o cortisol.</p>
+    <div class="bento-card">
+        <h6 class="small fw-bold opacity-50 mb-3 text-uppercase">Duração Semanal (Stacked)</h6>
+        <div style="height: 180px;"><canvas id="weeklyChart"></canvas></div>
     </div>
 </div>
 
-<nav class="bottom-nav shadow">
-    <a href="{% url 'google_fit_auth' %}" class="nav-link active">📊<br>Dashboard</a>
-    <a href="{% url 'doencas' %}" class="nav-link">📚<br>Doenças</a>
-    <a href="{% url 'perfil' %}" class="nav-link">👤<br>Perfil</a>
+<nav class="nav-bottom">
+    <a href="{% url 'google_fit_callback' %}" class="nav-link-custom active">📊<br>Dash</a>
+    <a href="{% url 'doencas' %}" class="nav-link-custom">📚<br>Guia</a>
+    <a href="{% url 'perfil' %}" class="nav-link-custom">👤<br>Perfil</a>
 </nav>
 
 <script>
-    const ctx = document.getElementById('weeklyChart').getContext('2d');
-    new Chart(ctx, {
+    const historico = {{ historico_json|safe }};
+    const labels = {{ labels|safe }};
+
+    function atualizarPainel(dia) {
+        const d = historico[dia];
+        document.getElementById('txt-dia').innerText = dia;
+        document.getElementById('txt-titulo').innerText = d.titulo;
+        document.getElementById('txt-titulo').style.color = d.cor;
+        const ring = document.getElementById('main-ring');
+        ring.setAttribute('data-score', d.score);
+        ring.style.background = `conic-gradient(${d.cor} ${d.score}%, rgba(255,255,255,0.1) 0)`;
+        document.getElementById('txt-horas').innerText = d.horas;
+        document.getElementById('txt-bpm').innerText = d.bpm;
+        document.getElementById('txt-profundo').innerText = d.profundo_h + "h";
+        document.getElementById('pie-profundo').style.setProperty('--p', d.profundo_pct);
+        document.getElementById('txt-rem').innerText = d.rem_h + "h";
+        document.getElementById('pie-rem').style.setProperty('--p', d.rem_pct);
+        document.getElementById('txt-leve').innerText = d.leve_h + "h";
+        document.getElementById('pie-leve').style.setProperty('--p', d.leve_pct);
+    }
+
+    window.onload = () => { if(labels.length) atualizarPainel(labels[labels.length - 1]); };
+
+    new Chart(document.getElementById('weeklyChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: {{ labels|safe }},
-            datasets: [{
-                data: {{ valores|safe }},
-                backgroundColor: '#3949ab',
-                borderRadius: 10,
-                barThickness: 20
-            }]
+            labels: labels,
+            datasets: [
+                { label: 'Profundo', data: labels.map(dia => historico[dia].profundo_h), backgroundColor: '#7e57c2', borderRadius: {bottomLeft: 8, bottomRight: 8} },
+                { label: 'REM', data: labels.map(dia => historico[dia].rem_h), backgroundColor: '#40c4ff' },
+                { label: 'Leve', data: labels.map(dia => historico[dia].leve_h), backgroundColor: '#ffca28', borderRadius: {topLeft: 8, topRight: 8} }
+            ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: {
-                y: { 
-                    beginAtZero: true, 
-                    suggestedMax: 10, // Define o máximo como 10 horas para dar perspectiva
-                    ticks: { stepSize: 2 } 
-                },
-                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-            }
+            scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, max: 12 } },
+            onClick: (e, el) => { if (el.length > 0) atualizarPainel(labels[el[0].index]); }
         }
     });
 </script>
-
 </body>
 </html>
