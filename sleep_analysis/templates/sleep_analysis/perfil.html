@@ -3,56 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SleepApp - Perfil</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Perfil - Sleep Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #f0f2f5; padding-bottom: 80px; }
-        .app-shell { max-width: 500px; margin: 0 auto; background: #fff; min-height: 100vh; }
-        .profile-header { background: #1a237e; color: white; padding: 50px 20px; text-align: center; border-radius: 0 0 40px 40px; }
-        .avatar { font-size: 60px; background: white; width: 100px; height: 100px; line-height: 100px; border-radius: 50%; margin: 0 auto 15px; }
-        .menu-item { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; text-decoration: none; color: #333; }
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; background: #fff; display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid #ddd; }
-        .nav-link { text-decoration: none; color: #888; font-size: 12px; text-align: center; }
-        .nav-link.active { color: #1a237e; font-weight: bold; }
+        body { background-color: #1e293b; display: flex; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+        
+        .app-container { 
+            width: 100%; 
+            max-width: 414px; 
+            background-color: #0f172a; 
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .glass-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.05); border-radius: 1.25rem; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
-<div class="app-shell">
-    <div class="profile-header shadow">
-        {% if request.session.user_picture %}
-            <img src="{{ request.session.user_picture }}" class="rounded-circle mb-3" style="width:100px; height:100px; border: 3px solid white;">
-        {% else %}
-            <div class="avatar">👤</div>
-        {% endif %}
+
+    <div class="app-container">
         
-        <h3 class="fw-bold">{{ request.session.user_name|default:"Utilizador" }}</h3>
-        <p class="small opacity-75">Utilizador Google Fit Ativo</p>
+        <header class="bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/5 z-50">
+            <a href="{% url 'dashboard' %}" class="text-blue-400 hover:text-blue-300">
+                <i class="fa-solid fa-chevron-left text-lg"></i>
+            </a>
+            <h1 class="text-lg font-bold tracking-tight text-white">O Meu Perfil</h1>
+            <div class="w-8"></div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
+            
+            <div class="flex flex-col items-center space-y-4">
+                <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-emerald-400 p-1">
+                    <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
+                        <i class="fa-solid fa-user text-4xl text-blue-400"></i>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-white">Utilizador Google Fit</h2>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <h3 class="text-slate-500 text-[10px] uppercase font-bold ml-2">Definições</h3>
+                
+                <div class="glass-card divide-y divide-white/5 overflow-hidden">
+                    <div class="p-4 flex justify-between items-center hover:bg-white/5 transition-colors cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-bell text-slate-400"></i>
+                            <span class="text-sm text-white">Notificações de Sono</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+                    </div>
+
+                    <div class="p-4 flex justify-between items-center hover:bg-white/5 transition-colors cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-shield-halved text-slate-400"></i>
+                            <span class="text-sm text-white">Privacidade de Dados</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <a href="{% url 'logout' %}" class="w-full glass-card p-4 flex items-center justify-center gap-3 text-red-400 hover:bg-red-400/10 transition-colors border-red-400/20">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="text-sm font-bold">Terminar Sessão</span>
+                </a>
+            </div>
+
+        </main>
+
+        <nav class="bg-slate-900/95 border-t border-white/5 flex justify-around items-center h-20 px-4 relative">
+            
+            <a href="{% url 'dashboard' %}" class="flex items-center justify-center w-16 h-full">
+                <i class="fa-solid fa-chart-line text-slate-400 text-2xl"></i>
+            </a>
+
+            <a href="{% url 'dashboard' %}" class="relative -top-6 flex flex-col items-center">
+                <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-[#0f172a]">
+                    <i class="fa-solid fa-house text-white text-2xl"></i>
+                </div>
+            </a>
+
+            <a href="{% url 'doencas' %}" class="flex items-center justify-center w-16 h-full">
+                <i class="fa-solid fa-circle-info text-slate-400 text-2xl"></i>
+            </a>
+
+        </nav>
     </div>
 
-    <div class="mt-4">
-        <div class="menu-item">
-            <span>Notificações</span>
-            <span class="text-success">Ligado</span>
-        </div>
-        <div class="menu-item">
-            <span>Unidades de Medida</span>
-            <span class="text-muted">Métrico (°C, Kg)</span>
-        </div>
-        <a href="https://myaccount.google.com/permissions" target="_blank" class="menu-item text-primary">
-            <span>Gerir Permissões Google</span>
-            <span>➔</span>
-        </a>
-        <a href="/" class="menu-item text-danger">
-            <span>Sair da Aplicação</span>
-            <span>🚪</span>
-        </a>
-    </div>
-</div>
-
-<nav class="bottom-nav">
-    <a href="{% url 'dashboard' %}" class="nav-link">📊<br>Dashboard</a>
-    <a href="{% url 'doencas' %}" class="nav-link">📚<br>Doenças</a>
-    <a href="#" class="nav-link active">👤<br>Perfil</a>
-</nav>
 </body>
 </html>

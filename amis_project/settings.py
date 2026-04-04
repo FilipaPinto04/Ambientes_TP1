@@ -118,15 +118,25 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# Permitir que os cookies funcionem em HTTP (localhost) sem HTTPS
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+# No teu settings.py
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_AGE = 1209600  # 2 semanas
+# Como estás em HTTP (local), estas devem estar False para não bloquear cookies
 SESSION_COOKIE_SECURE = False 
 CSRF_COOKIE_SECURE = False
+# settings.py
 
-# Forçar o Django a escrever no "disco" (DB) mal tu guardas algo na sessão
-SESSION_SAVE_EVERY_REQUEST = True
+# Força o Django a gravar a sessão na Base de Dados e não apenas em memória
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
-# Garante que o domínio do cookie é o localhost
+# Garante que o cookie de sessão é enviado mesmo em HTTP (importante para 127.0.0.1)
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
+# Importante: o Chrome às vezes bloqueia cookies de 127.0.0.1 se o domínio não for fidedigno
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 SESSION_COOKIE_DOMAIN = None
-
-SESSION_COOKIE_HTTPONLY = True
-SESSION_ENGINE = 'django.contrib.sessions.backends.db' # Garante que as sessões vão para a DB
