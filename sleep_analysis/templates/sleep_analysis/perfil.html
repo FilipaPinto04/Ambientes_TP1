@@ -34,31 +34,34 @@
             <a href="{% url 'dashboard' %}" class="text-blue-400 hover:text-blue-300">
                 <i class="fa-solid fa-chevron-left text-lg"></i>
             </a>
-            <h1 class="text-lg font-bold tracking-tight text-white">O Meu Perfil</h1>
+            <h1 class="text-lg font-bold tracking-tight text-white">My Profile</h1>
             <div class="w-8"></div>
         </header>
 
         <main class="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
             
             <div class="flex flex-col items-center space-y-4">
-                <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-emerald-400 p-1">
-                    <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
-                        <i class="fa-solid fa-user text-4xl text-blue-400"></i>
-                    </div>
+                <div class="relative inline-block">
+                    {% if user_picture %}
+                        <img src="{{ user_picture }}" alt="Avatar" class="w-24 h-24 rounded-full border-2 border-cyan-400">
+                    {% else %}
+                        <div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-user text-3xl text-slate-400"></i>
+                        </div>
+                    {% endif %}
                 </div>
-                <div class="text-center">
-                    <h2 class="text-xl font-bold text-white">Utilizador Google Fit</h2>
-                </div>
+
+                <h2 class="text-white text-xl font-bold mt-4">{{ user_name }}</h2>
             </div>
 
             <div class="space-y-3">
-                <h3 class="text-slate-500 text-[10px] uppercase font-bold ml-2">Definições</h3>
+                <h3 class="text-slate-500 text-[10px] uppercase font-bold ml-2">Settings</h3>
                 
                 <div class="glass-card divide-y divide-white/5 overflow-hidden">
                     <div class="p-4 flex justify-between items-center hover:bg-white/5 transition-colors cursor-pointer">
                         <div class="flex items-center gap-3">
                             <i class="fa-solid fa-bell text-slate-400"></i>
-                            <span class="text-sm text-white">Notificações de Sono</span>
+                            <span class="text-sm text-white">Sleep Notifications</span>
                         </div>
                         <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
                     </div>
@@ -66,7 +69,7 @@
                     <div class="p-4 flex justify-between items-center hover:bg-white/5 transition-colors cursor-pointer">
                         <div class="flex items-center gap-3">
                             <i class="fa-solid fa-shield-halved text-slate-400"></i>
-                            <span class="text-sm text-white">Privacidade de Dados</span>
+                            <span class="text-sm text-white">Data Privacy</span>
                         </div>
                         <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
                     </div>
@@ -76,7 +79,7 @@
             <div class="pt-4">
                 <a href="{% url 'logout' %}" class="w-full glass-card p-4 flex items-center justify-center gap-3 text-red-400 hover:bg-red-400/10 transition-colors border-red-400/20">
                     <i class="fa-solid fa-right-from-bracket"></i>
-                    <span class="text-sm font-bold">Terminar Sessão</span>
+                    <span class="text-sm font-bold">Log Out</span>
                 </a>
             </div>
 
@@ -84,7 +87,7 @@
 
         <nav class="bg-slate-900/95 border-t border-white/5 flex justify-around items-center h-20 px-4 relative">
             
-            <a href="{% url 'dashboard' %}" class="flex items-center justify-center w-16 h-full">
+            <a href="{% url 'relatorio' %}" class="flex items-center justify-center w-16 h-full">
                 <i class="fa-solid fa-chart-line text-slate-400 text-2xl"></i>
             </a>
 

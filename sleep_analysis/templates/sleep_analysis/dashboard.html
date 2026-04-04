@@ -102,7 +102,7 @@
 
             <div class="glass-card p-5">
                 <div class="flex justify-center items-center mb-4">
-                    <h3 class="text-slate-300 text-xs font-bold uppercase tracking-wider">Histórico Semanal</h3>
+                    <h3 class="text-slate-300 text-xs font-bold uppercase tracking-wider">Your Week</h3>
                 </div>
                 <div class="h-48">
                     <canvas id="sleepChart"></canvas>
@@ -110,7 +110,7 @@
             </div>
             
             <div class="glass-card p-4 flex flex-col items-center">
-                <h3 class="text-slate-500 uppercase text-[10px] font-bold tracking-widest mb-3">Pontuação de Sono</h3>
+                <h3 class="text-slate-500 uppercase text-[10px] font-bold tracking-widest mb-3">Sleep Score</h3>
                 <div class="relative inline-flex items-center justify-center">
                     <svg class="w-24 h-24">
                         <circle class="text-slate-800" stroke-width="4" stroke="currentColor" fill="transparent" r="44" cx="48" cy="48" />
@@ -125,26 +125,27 @@
                     </svg>
                     <span class="absolute text-3xl font-bold text-white">{{ analise.score }}</span>
                 </div>
-                <p class="mt-2 text-xs text-slate-500">Qualidade da Recuperação</p>
+                <p class="mt-2 text-xs text-slate-500">Quality of Recovery
+</p>
             </div>
 
             <div class="px-2 space-y-4">
                 <div class="glass-card p-4 bg-blue-500/5 border-blue-500/10">
                     <h4 class="text-white text-xs font-bold mb-2 flex items-center gap-2">
                         <i class="fa-solid fa-calculator text-blue-400"></i>
-                        Como calculamos o seu Score?
+                        How do we calculate your Score?
                     </h4>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
-                        Este valor mede a <b>Regularidade</b> do seu sono nos últimos 7 dias. 
-                        Comparamos a duração de cada noite com a sua média semanal. 
-                        Quanto maior for a variação (ex: dormir 5h num dia e 10h noutro), menor será a sua pontuação, pois isso desregula o seu ritmo biológico.
+                        This value measures the <b>Regularity</b> of your sleep over the last 7 days.
+                        We compare the duration of each night with your weekly average.
+                        The greater the variation (e.g., sleeping 5 hours one day and 10 hours another), the lower your score will be, as this disrupts your biological rhythm. 
                     </p>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2">
                     <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
                         <span class="block text-emerald-400 font-bold text-xs">85-100</span>
-                        <span class="text-[9px] text-emerald-500/80 uppercase font-bold tracking-tighter">Excelente</span>
+                        <span class="text-[9px] text-emerald-500/80 uppercase font-bold tracking-tighter">Excellent</span>
                     </div>
                     <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
                         <span class="block text-amber-400 font-bold text-xs">60-84</span>
@@ -152,7 +153,7 @@
                     </div>
                     <div class="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
                         <span class="block text-red-400 font-bold text-xs">&lt; 60</span>
-                        <span class="text-[9px] text-red-500/80 uppercase font-bold tracking-tighter">Crítico</span>
+                        <span class="text-[9px] text-red-500/80 uppercase font-bold tracking-tighter">Critical</span>
                     </div>
                 </div>
             </div>
@@ -181,7 +182,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                         </svg>
-                        Sleep Heart Rate <span class="text-slate-500 font-normal normal-case">(BPM)</span>
+                        Average Sleep Heart Rate <span class="text-slate-500 font-normal normal-case">(BPM)</span>
                     </h3>
                 </div>
                 <div class="h-48">
@@ -193,7 +194,7 @@
 
         <nav class="bg-slate-900/95 border-t border-white/5 flex justify-around items-center h-20 px-4 relative">
             
-            <a href="{% url 'dashboard' %}" class="flex items-center justify-center w-16 h-full">
+            <a href="{% url 'relatorio' %}" class="flex items-center justify-center w-16 h-full">
                 <i class="fa-solid fa-chart-line text-slate-400 text-2xl"></i>
             </a>
 

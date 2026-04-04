@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Sono</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #1e293b;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 414px;
+            background-color: #0f172a;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 1.25rem;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Expansão das métricas */
+        .metric-detail {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+        .metric-detail.open {
+            max-height: 500px;
+            opacity: 1;
+        }
+        .chevron { transition: transform 0.3s ease; }
+        .chevron.open { transform: rotate(180deg); }
+        .metric-card { cursor: pointer; transition: background 0.2s; }
+        .metric-card:active { opacity: 0.85; }
+
+        /* Cores dos insights */
+        .insight-warning { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.2); }
+        .insight-danger  { background: rgba(239,68,68,0.07);  border-color: rgba(239,68,68,0.2); }
+        .insight-info    { background: rgba(59,130,246,0.07); border-color: rgba(59,130,246,0.2); }
+
+        /* Score ring animado */
+        .score-ring { transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+
+        /* Nav */
+        .nav-item:active { transform: scale(0.9); }
+    </style>
+</head>
+<body>
+<div class="app-container">
+
+    <!-- ── HEADER ── -->
+    <header class="bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/5 z-50 flex-shrink-0">
+        {% if tem_anterior %}
+        <a href="?noite={{ idx|add:'1' }}"
+           class="w-9 h-9 rounded-full bg-slate-700/80 flex items-center justify-center hover:bg-slate-600 transition-colors">
+            <i class="fa-solid fa-chevron-left text-sm text-slate-300"></i>
+        </a>
+        {% else %}
+        <div class="w-9"></div>
+        {% endif %}
+
+        <div class="text-center">
+            <h1 class="text-sm font-bold text-white">{{ label_noite }}</h1>
+            <p class="text-[10px] text-slate-500 mt-0.5">{{ start_fmt }} → {{ end_fmt }}</p>
+        </div>
+
+        {% if tem_seguinte %}
+        <a href="?noite={{ idx|add:'-1' }}"
+           class="w-9 h-9 rounded-full bg-slate-700/80 flex items-center justify-center hover:bg-slate-600 transition-colors">
+            <i class="fa-solid fa-chevron-right text-sm text-slate-300"></i>
+        </a>
+        {% else %}
+        <div class="w-9"></div>
+        {% endif %}
+    </header>
+
+    <!-- ── MAIN ── -->
+    <main class="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-24">
+
+        {% if sem_dados %}
+        <div class="glass-card p-10 text-center mt-10">
+            <i class="fa-solid fa-moon text-slate-600 text-4xl mb-4"></i>
+            <p class="text-slate-400 text-sm">Sem dados de sono disponíveis.</p>
+        </div>
+        {% else %}
+
+        <!-- ── 1. DURAÇÃO TOTAL ── -->
+        <div class="glass-card p-5 flex items-center justify-between">
+            <div>
+                <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Duração Total</p>
+                <p class="text-white font-bold" style="font-size:2.4rem;line-height:1">
+                    {{ duracao_h }}<span class="text-xl text-slate-400">h</span>
+                    {{ duracao_m }}<span class="text-xl text-slate-400">m</span>
+                </p>
+                <p class="text-slate-500 text-xs mt-1.5">{{ start_fmt }} → {{ end_fmt }}</p>
+            </div>
+            <!-- Mini donut Deep % -->
+            <div class="relative flex-shrink-0">
+                <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                    <circle stroke-width="5" stroke="#1e293b" fill="transparent" r="34" cx="40" cy="40"/>
+                    <circle id="deepRing" class="score-ring"
+                        stroke-width="5"
+                        stroke-dasharray="213"
+                        stroke-dashoffset="213"
+                        stroke="#6366f1"
+                        stroke-linecap="round"
+                        fill="transparent"
+                        r="34" cx="40" cy="40"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="text-white text-xs font-bold">{{ fases.deep_pct }}%</span>
+                    <span class="text-slate-500 text-[9px] -mt-0.5">Deep</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── 2. BARRA DE FASES ── -->
+        <div class="glass-card p-4">
+            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-3">Fases do Sono</p>
+            <div class="flex rounded-full overflow-hidden h-3 mb-3 gap-px">
+                <div style="width:{{ fases.deep_pct }}%"  class="bg-indigo-500"></div>
+                <div style="width:{{ fases.rem_pct }}%"   class="bg-emerald-500"></div>
+                <div style="width:{{ fases.light_pct }}%" class="bg-blue-500"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center">
+                <div>
+                    <p class="text-indigo-400 font-bold text-sm">{{ fases.deep_fmt }}</p>
+                    <p class="text-slate-500 text-[9px] flex items-center justify-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span>Profundo
+                    </p>
+                </div>
+                <div>
+                    <p class="text-emerald-400 font-bold text-sm">{{ fases.rem_fmt }}</p>
+                    <p class="text-slate-500 text-[9px] flex items-center justify-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>REM
+                    </p>
+                </div>
+                <div>
+                    <p class="text-blue-400 font-bold text-sm">{{ fases.light_fmt }}</p>
+                    <p class="text-slate-500 text-[9px] flex items-center justify-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>Leve
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── 3. MÉTRICAS EXPANSÍVEIS ── -->
+        <div class="space-y-2">
+
+            <!-- Sono Profundo -->
+            <div class="glass-card overflow-hidden">
+                <div class="metric-card p-4 flex items-center justify-between" onclick="toggle('deep')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-brain text-indigo-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-semibold">Sono Profundo</p>
+                            <p class="text-slate-500 text-xs">{{ fases.deep_pct }}% · Normal: 10–35%</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-indigo-400 font-bold text-sm">{{ fases.deep_min }}m</span>
+                        <i id="chevron-deep" class="fa-solid fa-chevron-down text-slate-500 text-xs chevron"></i>
+                    </div>
+                </div>
+                <div id="detail-deep" class="metric-detail px-4 pb-4">
+                    <div class="pt-3 border-t border-white/5 space-y-3">
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-indigo-500 h-2 rounded-full transition-all"
+                                style="width: clamp(2%, {{ fases.deep_pct }}%, 100%)"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-indigo-400 font-bold text-sm">{{ fases.deep_min }}m</p>
+                                <p class="text-slate-500 text-[9px]">Duração</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-indigo-400 font-bold text-sm">{{ fases.deep_pct }}%</p>
+                                <p class="text-slate-500 text-[9px]">Do Total</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="font-bold text-sm {% if fases.deep_pct >= 10 and fases.deep_pct <= 35 %}text-emerald-400{% elif fases.deep_pct < 10 %}text-red-400{% else %}text-amber-400{% endif %}">
+                                    {% if fases.deep_pct >= 10 and fases.deep_pct <= 35 %}Normal{% elif fases.deep_pct < 10 %}Baixo{% else %}Alto{% endif %}
+                                </p>
+                                <p class="text-slate-500 text-[9px]">Estado</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            O sono profundo é a fase mais reparadora — essencial para recuperação muscular,
+                            sistema imunitário e consolidação de memórias de longo prazo.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REM -->
+            <div class="glass-card overflow-hidden">
+                <div class="metric-card p-4 flex items-center justify-between" onclick="toggle('rem')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-eye text-emerald-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-semibold">Sono REM</p>
+                            <p class="text-slate-500 text-xs">{{ fases.rem_pct }}% · Normal: 10–35%</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-emerald-400 font-bold text-sm">{{ fases.rem_min }}m</span>
+                        <i id="chevron-rem" class="fa-solid fa-chevron-down text-slate-500 text-xs chevron"></i>
+                    </div>
+                </div>
+                <div id="detail-rem" class="metric-detail px-4 pb-4">
+                    <div class="pt-3 border-t border-white/5 space-y-3">
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-emerald-500 h-2 rounded-full"
+                                style="width: clamp(2%, {{ fases.rem_pct }}%, 100%)"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-emerald-400 font-bold text-sm">{{ fases.rem_min }}m</p>
+                                <p class="text-slate-500 text-[9px]">Duração</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-emerald-400 font-bold text-sm">{{ fases.rem_pct }}%</p>
+                                <p class="text-slate-500 text-[9px]">Do Total</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="font-bold text-sm {% if fases.rem_pct >= 10 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                                    {% if fases.rem_pct >= 10 %}Normal{% else %}Baixo{% endif %}
+                                </p>
+                                <p class="text-slate-500 text-[9px]">Estado</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            A fase REM é onde ocorrem os sonhos. Essencial para saúde mental,
+                            criatividade, regulação emocional e consolidação de memórias procedurais.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vigília -->
+            <div class="glass-card overflow-hidden">
+                <div class="metric-card p-4 flex items-center justify-between" onclick="toggle('awake')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-person-walking text-red-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-semibold">Acordado</p>
+                            <p class="text-slate-500 text-xs">Normal: &lt;10% do tempo total</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-red-400 font-bold text-sm">{{ fases.awake_min }}m</span>
+                        <i id="chevron-awake" class="fa-solid fa-chevron-down text-slate-500 text-xs chevron"></i>
+                    </div>
+                </div>
+                <div id="detail-awake" class="metric-detail px-4 pb-4">
+                    <div class="pt-3 border-t border-white/5">
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            Acordar brevemente durante a noite é normal e faz parte dos ciclos de sono.
+                            Torna-se problemático quando é frequente ou prolongado, fragmentando os ciclos
+                            e reduzindo a sensação de descanso no dia seguinte.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sleep Heart Rate -->
+            <div class="glass-card overflow-hidden">
+                <div class="metric-card p-4 flex items-center justify-between" onclick="toggle('bpm')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/15 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-heart-pulse text-rose-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-semibold">Freq. Cardíaca</p>
+                            <p class="text-slate-500 text-xs">Durante o sono · Ideal: &lt;70 bpm</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="{% if fases.bpm_medio > 70 %}text-amber-400{% else %}text-rose-400{% endif %} font-bold text-sm">
+                            {{ fases.bpm_medio }} bpm
+                        </span>
+                        <i id="chevron-bpm" class="fa-solid fa-chevron-down text-slate-500 text-xs chevron"></i>
+                    </div>
+                </div>
+                <div id="detail-bpm" class="metric-detail px-4 pb-4">
+                    <div class="pt-3 border-t border-white/5 space-y-3">
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-rose-400 font-bold text-sm">{{ fases.bpm_min }}</p>
+                                <p class="text-slate-500 text-[9px]">Mínimo</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-rose-400 font-bold text-sm">{{ fases.bpm_medio }}</p>
+                                <p class="text-slate-500 text-[9px]">Média</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-rose-400 font-bold text-sm">{{ fases.bpm_max }}</p>
+                                <p class="text-slate-500 text-[9px]">Máximo</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            A frequência cardíaca baixa durante o sono é sinal de boa recuperação cardiovascular.
+                            Valores acima de 70 bpm em repouso podem indicar stress, má recuperação
+                            ou temperatura elevada no quarto.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Passos do Dia -->
+            <div class="glass-card overflow-hidden">
+                <div class="metric-card p-4 flex items-center justify-between" onclick="toggle('steps')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-shoe-prints text-amber-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-semibold">Passos do Dia</p>
+                            <p class="text-slate-500 text-xs">Antes desta noite</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-amber-400 font-bold text-sm">{{ passos_dia }}</span>
+                        <i id="chevron-steps" class="fa-solid fa-chevron-down text-slate-500 text-xs chevron"></i>
+                    </div>
+                </div>
+                <div id="detail-steps" class="metric-detail px-4 pb-4">
+                    <div class="pt-3 border-t border-white/5 space-y-3">
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-amber-500 h-2 rounded-full"
+                                style="width: {% widthratio passos_dia 15000 100 %}%"></div>
+                        </div>
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            {% if passos_dia > 12000 %}
+                            Dia muito ativo ({{ passos_dia }} passos). A fadiga física tende a aumentar o sono profundo,
+                            mas exercício intenso próximo da hora de dormir pode fragmentar o sono.
+                            {% elif passos_dia > 7000 %}
+                            Atividade adequada ({{ passos_dia }} passos). Tende a contribuir positivamente
+                            para a qualidade do sono e facilitar o adormecer.
+                            {% elif passos_dia > 3000 %}
+                            Dia moderado ({{ passos_dia }} passos). Aumentar a atividade física diurna
+                            pode melhorar a qualidade do sono profundo.
+                            {% else %}
+                            Dia sedentário ({{ passos_dia }} passos). A falta de exercício pode reduzir
+                            o sono profundo e dificultar o adormecer.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score de Regularidade -->
+            <div class="glass-card overflow-hidden">
+                <div class="metric-card p-4 flex items-center justify-between" onclick="toggle('reg')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-violet-500/15 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-chart-simple text-violet-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-semibold">Regularidade</p>
+                            <p class="text-slate-500 text-xs">
+                                {% if score_reg.comparacao == 'acima' %}Acima da média semanal
+                                {% elif score_reg.comparacao == 'abaixo' %}Abaixo da média semanal
+                                {% else %}Dentro da média semanal{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="font-bold text-sm
+                            {% if score_reg.score >= 80 %}text-emerald-400
+                            {% elif score_reg.score >= 60 %}text-amber-400
+                            {% else %}text-red-400{% endif %}">
+                            {{ score_reg.score }}
+                        </span>
+                        <i id="chevron-reg" class="fa-solid fa-chevron-down text-slate-500 text-xs chevron"></i>
+                    </div>
+                </div>
+                <div id="detail-reg" class="metric-detail px-4 pb-4">
+                    <div class="pt-3 border-t border-white/5 space-y-3">
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-violet-400 font-bold text-sm">{{ score_reg.media_h }}h {{ score_reg.media_m }}m</p>
+                                <p class="text-slate-500 text-[9px]">Média Semanal</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-violet-400 font-bold text-sm">{{ score_reg.desvio_h }}h {{ score_reg.desvio_m }}m</p>
+                                <p class="text-slate-500 text-[9px]">Desvio</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="font-bold text-sm
+                                    {% if score_reg.score >= 80 %}text-emerald-400
+                                    {% elif score_reg.score >= 60 %}text-amber-400
+                                    {% else %}text-red-400{% endif %}">
+                                    {% if score_reg.score >= 80 %}Regular
+                                    {% elif score_reg.score >= 60 %}Irregular
+                                    {% else %}Crítico{% endif %}
+                                </p>
+                                <p class="text-slate-500 text-[9px]">Estado</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-400 text-xs leading-relaxed">
+                            Manter horários de sono consistentes é um dos fatores mais importantes para a
+                            saúde circadiana. Grandes variações diárias desregulam o relógio biológico.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparação Semanal -->
+            <div class="glass-card overflow-hidden">
+                <div class="metric-card p-4 flex items-center justify-between" onclick="toggle('week')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-sky-500/15 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-calendar-week text-sky-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-semibold">Comparação Semanal</p>
+                            <p class="text-slate-500 text-xs">
+                                {{ comparacao.diff_min }}m {{ comparacao.diff_dir }} que a média
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-sky-400 font-bold text-sm">Top {{ comparacao.percentil }}%</span>
+                        <i id="chevron-week" class="fa-solid fa-chevron-down text-slate-500 text-xs chevron"></i>
+                    </div>
+                </div>
+                <div id="detail-week" class="metric-detail px-4 pb-4">
+                    <div class="pt-3 border-t border-white/5 space-y-3">
+                        <div class="h-32">
+                            <canvas id="semanalChart"></canvas>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-center">
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-sky-400 font-bold text-sm">{{ comparacao.media_h }}h {{ comparacao.media_m }}m</p>
+                                <p class="text-slate-500 text-[9px]">Média Semanal</p>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2">
+                                <p class="text-sky-400 font-bold text-sm">{{ comparacao.percentil }}%</p>
+                                <p class="text-slate-500 text-[9px]">Das tuas noites</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── 4. INSIGHTS ── -->
+        {% if insights %}
+        <div>
+            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-3 px-1">
+                Análise desta Noite
+            </p>
+            <div class="space-y-2">
+                {% for insight in insights %}
+                <div class="glass-card p-4 border insight-{{ insight.tipo }} flex gap-3">
+                    <span class="text-xl flex-shrink-0 mt-0.5">{{ insight.icon }}</span>
+                    <div>
+                        <p class="text-white text-xs font-bold mb-1">{{ insight.titulo }}</p>
+                        <p class="text-slate-400 text-xs leading-relaxed">{{ insight.desc }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </main>
+
+    <!-- ── NAV BAR ── -->
+    <nav class="bg-slate-900/95 border-t border-white/5 flex justify-around items-center h-20 px-4 relative flex-shrink-0">
+        <a href="{% url 'relatorio' %}" class="flex items-center justify-center w-16 h-full nav-item">
+            <i class="fa-solid fa-chart-line text-slate-400 text-2xl"></i>
+        </a>
+        <a href="{% url 'dashboard' %}" class="relative -top-6">
+            <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-[#0f172a]">
+                <i class="fa-solid fa-house text-white text-2xl"></i>
+            </div>
+        </a>
+        <a href="{% url 'doencas' %}" class="flex items-center justify-center w-16 h-full nav-item">
+            <i class="fa-solid fa-circle-info text-slate-400 text-2xl"></i>
+        </a>
+    </nav>
+</div>
+
+<script>
+    // ── Toggle métricas ──
+    function toggle(id) {
+        document.getElementById('detail-' + id).classList.toggle('open');
+        document.getElementById('chevron-' + id).classList.toggle('open');
+    }
+
+    // ── Animação do Deep ring ──
+    window.addEventListener('load', () => {
+        const ring = document.getElementById('deepRing');
+        if (ring) {
+            const pct   = {{ fases.deep_pct }};
+            const circ  = 213;
+            const offset = circ - (circ * pct / 100);
+            setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
+        }
+    });
+
+    // ── Gráfico Semanal (dentro da métrica expansível) ──
+    const semanalRaw = {{ semanal_chart|safe }};
+
+    // Renderiza quando a secção expandir
+    let semanalChartInstance = null;
+    document.getElementById('chevron-week').closest('.glass-card')
+        .querySelector('.metric-card')
+        .addEventListener('click', () => {
+            setTimeout(() => {
+                if (semanalChartInstance) return; // já criado
+                const ctx = document.getElementById('semanalChart');
+                if (!ctx) return;
+
+                const bgColors = semanalRaw.is_current.map(c =>
+                    c ? 'rgba(56,189,248,0.9)' : 'rgba(99,102,241,0.5)'
+                );
+                const borderColors = semanalRaw.is_current.map(c =>
+                    c ? '#38bdf8' : '#6366f1'
+                );
+
+                semanalChartInstance = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: semanalRaw.labels,
+                        datasets: [{
+                            data: semanalRaw.values,
+                            backgroundColor: bgColors,
+                            borderColor: borderColors,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#64748b', font: { size: 9 },
+                                    callback: v => v + 'h'
+                                },
+                                grid: { color: 'rgba(255,255,255,0.04)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+            }, 200);
+        });
+</script>
+</body>
+</html>

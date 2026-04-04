@@ -10,6 +10,7 @@ urlpatterns = [
     path('doencas/', views.doencas, name='doencas'),
     path('perfil/', views.perfil, name='perfil'),
     path('logout/', views.logout_view, name='logout'),
+    path('relatorio/', views.relatorio_sono, name='relatorio'),
     
     # Rotas de Autenticação puras
     path('google-fit/login/', views.google_fit_auth, name='google_fit_auth'),
