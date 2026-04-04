@@ -914,7 +914,7 @@ def relatorio_sono(request):
         'semanal_chart': semanal_chart,
         'insights':      insights,
         'idx':           idx,
-        'tem_anterior':  idx < len(sessoes_sono) - 1,
-        'tem_seguinte':  idx > 0,
+        'tem_anterior':  idx < len(sessoes_sono) - 1, # Existe uma noite mais antiga?
+        'tem_seguinte':  idx > 0,                     # Existe uma noite mais recente?
         'total_noites':  len(sessoes_sono),
     })

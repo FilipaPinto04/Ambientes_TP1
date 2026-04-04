@@ -66,29 +66,29 @@
 <div class="app-container">
 
     <!-- ── HEADER ── -->
-    <header class="bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/5 z-50 flex-shrink-0">
-        {% if tem_anterior %}
-        <a href="?noite={{ idx|add:'1' }}"
-           class="w-9 h-9 rounded-full bg-slate-700/80 flex items-center justify-center hover:bg-slate-600 transition-colors">
-            <i class="fa-solid fa-chevron-left text-sm text-slate-300"></i>
-        </a>
-        {% else %}
-        <div class="w-9"></div>
-        {% endif %}
+    <header class="bg-slate-900/80 backdrop-blur-md p-4 grid grid-cols-3 items-center border-b border-white/5 z-50 flex-shrink-0">
+        
+        <div class="flex justify-end">
+            {% if tem_anterior %}
+            <a href="?noite={{ idx|add:'1' }}" class="p-2 hover:text-white transition-colors text-slate-500">
+                <i class="fa-solid fa-chevron-left text-lg"></i>
+            </a>
+            {% endif %}
+        </div>
 
-        <div class="text-center">
-            <h1 class="text-sm font-bold text-white">{{ label_noite }}</h1>
+        <div class="text-center min-w-max px-2">
+            <h1 class="text-sm font-bold text-white whitespace-nowrap">{{ label_noite }}</h1>
             <p class="text-[10px] text-slate-500 mt-0.5">{{ start_fmt }} → {{ end_fmt }}</p>
         </div>
 
-        {% if tem_seguinte %}
-        <a href="?noite={{ idx|add:'-1' }}"
-           class="w-9 h-9 rounded-full bg-slate-700/80 flex items-center justify-center hover:bg-slate-600 transition-colors">
-            <i class="fa-solid fa-chevron-right text-sm text-slate-300"></i>
-        </a>
-        {% else %}
-        <div class="w-9"></div>
-        {% endif %}
+        <div class="flex justify-start">
+            {% if tem_seguinte %}
+            <a href="?noite={{ idx|add:'-1' }}" class="p-2 hover:text-white transition-colors text-slate-500">
+                <i class="fa-solid fa-chevron-right text-lg"></i>
+            </a>
+            {% endif %}
+        </div>
+
     </header>
 
     <!-- ── MAIN ── -->
