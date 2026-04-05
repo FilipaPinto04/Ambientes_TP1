@@ -89,7 +89,6 @@
 <body>
 
     <div class="app-container">
-                      
 
         <header class="bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/5 z-50">
             <div class="w-8"></div>
@@ -108,7 +107,7 @@
 
             <div class="glass-card p-5">
                 <div class="flex justify-center items-center mb-4">
-                    <h3 class="text-slate-300 text-xs font-bold uppercase tracking-wider">Your Week</h3>
+                    <h3 class="text-slate-300 text-xs font-bold uppercase tracking-wider">Histórico</h3>
                 </div>
                 <div class="h-48">
                     <canvas id="sleepChart"></canvas>
@@ -131,27 +130,24 @@
                     </svg>
                     <span class="absolute text-3xl font-bold text-white">{{ analise.score }}</span>
                 </div>
-                <p class="mt-2 text-xs text-slate-500">Quality of Recovery
-</p>
+                <p class="mt-2 text-xs text-slate-500">Qualidade de Recuperação</p>
             </div>
 
             <div class="px-2 space-y-4">
                 <div class="glass-card p-4 bg-blue-500/5 border-blue-500/10">
                     <h4 class="text-white text-xs font-bold mb-2 flex items-center gap-2">
-                        <i class="fa-solid fa-calculator text-blue-400"></i>
-                        How do we calculate your Score?
+                        Como é calculado o Score?
                     </h4>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
-                        This value measures the <b>Regularity</b> of your sleep over the last 7 days.
-                        We compare the duration of each night with your weekly average.
-                        The greater the variation (e.g., sleeping 5 hours one day and 10 hours another), the lower your score will be, as this disrupts your biological rhythm. 
-                    </p>
+                        Este valor mede a <b>regularidade</b> do seu sono nos últimos 7 dias.
+                        Comparamos a duração de cada noite com a sua média semanal.
+                        Quanto maior a variação (por exemplo, dormir 5 horas num dia e 10 horas noutro), menor será a sua pontuação, pois isso perturba o seu ritmo biológico.</p>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2">
                     <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
                         <span class="block text-emerald-400 font-bold text-xs">85-100</span>
-                        <span class="text-[9px] text-emerald-500/80 uppercase font-bold tracking-tighter">Excellent</span>
+                        <span class="text-[9px] text-emerald-500/80 uppercase font-bold tracking-tighter">Excelente</span>
                     </div>
                     <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
                         <span class="block text-amber-400 font-bold text-xs">60-84</span>
@@ -159,7 +155,7 @@
                     </div>
                     <div class="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
                         <span class="block text-red-400 font-bold text-xs">&lt; 60</span>
-                        <span class="text-[9px] text-red-500/80 uppercase font-bold tracking-tighter">Critical</span>
+                        <span class="text-[9px] text-red-500/80 uppercase font-bold tracking-tighter">Crítico</span>
                     </div>
                 </div>
             </div>
@@ -171,7 +167,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
                         </svg>
-                        Sleep Regularity
+                        Regularidade
                     </h3>
                 </div>
                 <div class="h-48">
@@ -179,8 +175,6 @@
                 </div>
             </div>
 
-
-            <!-- GRÁFICO 2: SLEEP HEART RATE -->
             <div class="glass-card p-5">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
@@ -188,7 +182,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                         </svg>
-                        Average Sleep Heart Rate <span class="text-slate-500 font-normal normal-case">(BPM)</span>
+                        Frequência cardíaca média do sono<span class="text-slate-500 font-normal normal-case">(BPM)</span>
                     </h3>
                 </div>
                 <div class="h-48">
@@ -273,10 +267,9 @@
         });
         const regularityRaw = {{ regularity_data|safe }};
 
-        // Filtra só os dias que têm dados
         const regLabels  = regularityRaw.map(d => d.label);
-        const regSleep   = regularityRaw.map(d => d.sleep);   // hora de adormecer (decimal)
-        const regWake    = regularityRaw.map(d => d.wake);     // hora de acordar (decimal)
+        const regSleep   = regularityRaw.map(d => d.sleep);  
+        const regWake    = regularityRaw.map(d => d.wake);     
         const regSleepFmt = regularityRaw.map(d => d.sleep_fmt);
         const regWakeFmt  = regularityRaw.map(d => d.wake_fmt);
 
@@ -293,7 +286,6 @@
                 labels: regLabels,
                 datasets: [
                     {
-                        // Base invisível (empurra a barra para a hora certa)
                         label: '_base',
                         data: regSleep,
                         backgroundColor: 'transparent',
@@ -341,7 +333,6 @@
                             color: '#64748b',
                             font: { size: 10 },
                             callback: function(value) {
-                                // Converte decimal de volta para hora (ex: -1 → 23:00, 7 → 07:00)
                                 const h = value < 0 ? value + 24 : value;
                                 return `${String(Math.floor(h)).padStart(2,'0')}:00`;
                             }
@@ -353,7 +344,6 @@
         });
 
 
-        // --- SLEEP HEART RATE ---
         const bpmSonoRaw = {{ bpm_sono_data|safe }};
 
         const bpmLabels = bpmSonoRaw.map(d => d.label);

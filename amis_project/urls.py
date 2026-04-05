@@ -20,5 +20,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('sleep_analysis.urls')), # Inclui as rotas que definimos acima
+    path('', include('sleep_analysis.urls')), 
 ]

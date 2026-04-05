@@ -10,9 +10,9 @@ class RegistroSaude(models.Model):
     
     data = models.DateField()
     tipo = models.CharField(max_length=10, choices=TIPOS)
-    valor_principal = models.FloatField()  # Ex: Horas totais, Passos totais
-    detalhes = models.JSONField(default=dict)  # Aqui guardamos fases do sono ou variabilidade de BPM
-    score_dia = models.IntegerField(default=0) # Calculado cientificamente
+    valor_principal = models.FloatField()
+    detalhes = models.JSONField(default=dict)  
+    score_dia = models.IntegerField(default=0) 
     
     class Meta:
         unique_together = ('data', 'tipo')

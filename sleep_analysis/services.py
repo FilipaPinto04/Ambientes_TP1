@@ -21,7 +21,7 @@ class GoogleFitService:
         body = {
             "aggregateBy": [
                 {"dataTypeName": "com.google.step_count.delta"},
-                {"dataTypeName": "com.google.heart_rate.summary"} # O culpado está aqui
+                {"dataTypeName": "com.google.heart_rate.summary"} 
             ],
             "bucketByTime": {"durationMillis": 86400000},
             "startTimeMillis": time_info['start_ms'],
@@ -29,10 +29,8 @@ class GoogleFitService:
         }
 
         try:
-            # Tenta buscar os dados
             response = self.service.users().dataset().aggregate(userId='me', body=body).execute()
         except Exception as e:
-            # Se der erro (como o 400 da imagem), criamos uma resposta vazia manual
             print(f"Aviso: Não foram encontrados dados de sensores: {e}")
             return []
         
@@ -50,11 +48,9 @@ class GoogleFitService:
 
             for dataset in bucket.get('dataset', []):
                 for point in dataset.get('point', []):
-                    # Extração de Passos
                     if 'step_count.delta' in dataset['dataSourceId']:
                         day_data['steps'] = point['value'][0]['intVal']
                     
-                    # Extração de Heart Rate (Média, Max, Min)
                     if 'heart_rate.summary' in dataset['dataSourceId']:
                         day_data['bpm_avg'] = round(point['value'][0]['fpVal'], 1)
                         day_data['bpm_max'] = point['value'][1]['fpVal']

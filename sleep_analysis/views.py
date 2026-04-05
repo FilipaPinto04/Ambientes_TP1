@@ -215,7 +215,6 @@ def home(request):
     """Página inicial com o botão de login."""
     return render(request, 'sleep_analysis/home.html')
 
-
 def google_fit_auth(request):
     """Inicia o fluxo OAuth2 com o Google."""
     request.session.pop('oauth_state', None)
@@ -290,7 +289,6 @@ def google_fit_callback(request):
     except Exception as e:
         print(f"Erro no Callback: {e}")
         return redirect('home')
-
         
 def logout_view(request):
     """Termina sessão e redireciona para a página inicial."""
@@ -305,7 +303,6 @@ def logout_view(request):
 def doencas(request):
     """Página informativa sobre distúrbios do sono."""
     return render(request, 'sleep_analysis/doencas.html')
-
 
 def perfil(request):
     user_data = request.session.get('user_data', {})
@@ -356,7 +353,7 @@ def dashboard(request):
 
     # --- 1. Janela de Tempo ---
     now_local   = datetime.datetime.now(LOCAL_TZ)
-    start_local = now_local - datetime.timedelta(days=7)
+    start_local = now_local - datetime.timedelta(days=365)
     start_ms    = int(start_local.timestamp() * 1000)
     end_ms      = int(now_local.timestamp() * 1000)
 
@@ -408,8 +405,14 @@ def dashboard(request):
                 h = h - 24
             return round(h, 2)
 
+        DIAS_PT = {
+            'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua',
+            'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb', 'Sun': 'Dom'
+        }
+
         regularity_data.append({
             'label': end_dt.strftime("%a"),
+            'label': DIAS_PT.get(end_dt.strftime("%a")),
             'sleep': hora_para_decimal(start_dt),   # hora de adormecer
             'wake':  hora_para_decimal(end_dt),      # hora de acordar
             'sleep_fmt': start_dt.strftime("%H:%M"),
@@ -500,7 +503,11 @@ def processar_sono_semanal(sessoes_sono, duracoes_reais, local_tz):
         (now_local - datetime.timedelta(days=i)).date()
         for i in range(7, 0, -1)
     ]
-    labels_semana = [d.strftime("%a") for d in dias_semana]
+    DIAS_PT = {
+        'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua',
+        'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb', 'Sun': 'Dom'
+    }
+    labels_semana = [DIAS_PT[d.strftime("%a")] for d in dias_semana]
 
     # Agrupa todas as sessões por dia (pelo fim — igual ao Google Fit)
     sessoes_por_dia = defaultdict(list)
@@ -565,9 +572,13 @@ def buscar_bpm_sono(fit_service, sessoes_sono):
         end_dt = datetime.datetime.utcfromtimestamp(end_ms / 1000)
         end_dt = pytz.utc.localize(end_dt).astimezone(LOCAL_TZ)
  
+        DIAS_PT = {
+            'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua',
+            'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb', 'Sun': 'Dom'
+        }
         resultado.append({
             'date': end_dt.date(),
-            'label': end_dt.strftime("%a"),
+            'label': DIAS_PT.get(end_dt.strftime("%a"), end_dt.strftime("%a")),
             'bpm': bpm_medio,
         })
  
@@ -648,7 +659,6 @@ def buscar_fases_sono_sessao(fit_service, sessao):
         'bpm_max':   round(max(bpms)) if bpms else 0,
     }
 
-
 def calcular_score_regularidade_noite(sessao, todas_sessoes, local_tz):
     """
     Calcula o score de regularidade desta noite comparada com a média semanal.
@@ -681,7 +691,6 @@ def calcular_score_regularidade_noite(sessao, todas_sessoes, local_tz):
         'comparacao': comparacao,
     }
 
-
 def calcular_comparacao_semanal(sessao, todas_sessoes):
     """
     Compara esta noite com a média semanal em termos de duração.
@@ -697,6 +706,11 @@ def calcular_comparacao_semanal(sessao, todas_sessoes):
     noites_piores = sum(1 for d in duracoes if d < duracao_noite)
     percentil     = round(noites_piores / len(duracoes) * 100) if duracoes else 50
 
+    DIAS_PT = {
+        'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua',
+        'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb', 'Sun': 'Dom'
+    }
+
     grafico = []
     for s in sorted(todas_sessoes, key=lambda x: int(x['startTimeMillis'])):
         end_dt = pytz.utc.localize(
@@ -704,7 +718,7 @@ def calcular_comparacao_semanal(sessao, todas_sessoes):
         ).astimezone(LOCAL_TZ)
         dur = round((int(s['endTimeMillis']) - int(s['startTimeMillis'])) / 3_600_000, 2)
         grafico.append({
-            'label':      end_dt.strftime('%a'),
+            'label': DIAS_PT[end_dt.strftime('%a')],
             'horas':      dur,
             'is_current': s['id'] == sessao['id'],
         })
@@ -717,7 +731,6 @@ def calcular_comparacao_semanal(sessao, todas_sessoes):
         'media_m':   round((media_duracao % 1) * 60),
         'grafico':   grafico,
     }
-
 
 def gerar_insights(fases, passos_dia, clima, sessao, score_reg, local_tz):
     """
@@ -847,7 +860,6 @@ def gerar_insights(fases, passos_dia, clima, sessao, score_reg, local_tz):
 
     return insights
 
-
 # ------------------------------------------------------------------------------
 # VIEW PRINCIPAL
 # ------------------------------------------------------------------------------
@@ -930,8 +942,22 @@ def relatorio_sono(request):
         'is_current': [d['is_current'] for d in comparacao['grafico']],
     })
 
+    MESES_PT = {
+        'January': 'Janeiro', 'February': 'Fevereiro', 'March': 'Março',
+        'April': 'Abril', 'May': 'Maio', 'June': 'Junho',
+        'July': 'Julho', 'August': 'Agosto', 'September': 'Setembro',
+        'October': 'Outubro', 'November': 'Novembro', 'December': 'Dezembro'
+    }
+    DIAS_SEMANA_PT = {
+        'Monday': 'Segunda', 'Tuesday': 'Terça', 'Wednesday': 'Quarta',
+        'Thursday': 'Quinta', 'Friday': 'Sexta', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
+    }
+
+    dia_semana = DIAS_SEMANA_PT[end_dt.strftime("%A")]
+    mes        = MESES_PT[end_dt.strftime("%B")]
+
     return render(request, 'sleep_analysis/relatorio.html', {
-        'label_noite':   end_dt.strftime("%A, %d %B"),
+        'label_noite': f"{dia_semana}, {end_dt.strftime('%d')} de {mes}",
         'start_fmt':     start_dt.strftime('%H:%M'),
         'end_fmt':       end_dt.strftime('%H:%M'),
         'duracao_h':     int(duracao_h),

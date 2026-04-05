@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
-from .models import DiarioSaude # Importamos o modelo para guardar na BD
+from .models import DiarioSaude 
 
 def parse_apple_health_para_django(file_path):
     context = ET.iterparse(file_path, events=("end",))
@@ -36,24 +36,20 @@ def parse_apple_health_para_django(file_path):
     
     if not records_list: return
 
-    # --- Lógica de Agrupamento por Dia ---
     df = pd.DataFrame(records_list)
     df['dia'] = df['data_inicio'].dt.date
     df['duracao_min'] = (df['data_fim'] - df['data_inicio']).dt.total_seconds() / 60
 
     for dia, grupo in df.groupby('dia'):
-        # Extrair métricas
         passos = grupo[grupo['tipo'] == 'StepCount']['valor'].sum()
         exe_min = grupo[grupo['tipo'] == 'AppleExerciseTime']['valor'].sum()
         hr_med = grupo[grupo['tipo'] == 'HeartRate']['valor'].mean()
         sono_p = grupo[grupo['tipo'] == 'Deep']['duracao_min'].sum()
         
-        # Lógica de Decisão (Enunciado AIMS)
         alerta_msg = ""
         if passos > 10000 and sono_p < 60:
             alerta_msg = "Atividade elevada com pouco sono profundo. Risco de fadiga."
 
-        # Guardar na Base de Dados do Django
         DiarioSaude.objects.update_or_create(
             data=dia,
             defaults={
