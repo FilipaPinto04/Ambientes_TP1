@@ -12,6 +12,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from googleapiclient.discovery import build
 from collections import defaultdict
+from .notifications import verificar_ritmo_e_notificar
 
 # ==============================================================================
 # CONFIGURAÇÕES GLOBAIS
@@ -306,13 +307,40 @@ def doencas(request):
     return render(request, 'sleep_analysis/doencas.html')
 
 
-# views.py
 def perfil(request):
     user_data = request.session.get('user_data', {})
-    context = {
-        'user_name': user_data.get('name', 'Utilizador Google Fit'),
-        'user_picture': user_data.get('picture', None)
-    }
+    
+    # 1. Tenta carregar o que já está na sessão, ou define os padrões
+    context = request.session.get('perfil_personalizado', {
+        'user_name': user_data.get('name', 'Ambientes Inteligentes'),
+        'sexo': 'Masculino',
+        'data_nascimento': '2004-05-08',
+        'peso': 60,
+        'altura': 180,
+        'atividade': 'Sedentário',
+        'cronotipo': 'Matutino',
+        'meta_horas': 8.0,
+    })
+
+    if request.method == "POST":
+        # 2. Captura TUDO do formulário
+        context = {
+            'user_name': request.POST.get('user_name'),
+            'sexo': request.POST.get('sexo'),
+            'data_nascimento': request.POST.get('data_nascimento'),
+            'peso': request.POST.get('peso'),
+            'altura': request.POST.get('altura'),
+            'atividade': request.POST.get('atividade'),
+            'cronotipo': request.POST.get('cronotipo'),
+            'meta_horas': request.POST.get('meta_horas'),
+        }
+        # 3. Guarda na sessão para persistir durante a navegação
+        request.session['perfil_personalizado'] = context
+        request.session.modified = True
+        return redirect('perfil')
+
+    # 4. Define o modo (Edição ou Visualização)
+    context['modo_edicao'] = request.GET.get('edit') == '1'
     return render(request, 'sleep_analysis/perfil.html', context)
 
 def dashboard(request):
@@ -390,6 +418,8 @@ def dashboard(request):
 
     # --- 7. Sleep Heart Rate ---
     bpm_sono_data = buscar_bpm_sono(fit_service, sessoes_sono)
+
+    verificar_ritmo_e_notificar(regularity_data, request) ##############################
 
     return render(request, 'sleep_analysis/dashboard.html', {
         'analise':        analise_final,

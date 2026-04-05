@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informações - Sleep Analysis</title>
+    <title>Biblioteca - Sleep Analysis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -11,14 +11,13 @@
         .app-container { 
             width: 100%; max-width: 414px; background-color: #0f172a; 
             overflow: hidden; display: flex; flex-direction: column; height: 90vh; 
-            position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-radius: 1rem;
         }
         .glass-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; transition: all 0.3s ease; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Estilo para expansão */
-        .content-hidden { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-        .expanded .content-hidden { max-height: 500px; padding-top: 1rem; }
+        .content-hidden { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; opacity: 0; }
+        .expanded .content-hidden { max-height: 1000px; opacity: 1; padding-top: 1rem; }
         .expanded i.chevron { transform: rotate(180deg); }
     </style>
 </head>
@@ -33,82 +32,104 @@
             </a>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar pb-24">
+        <main class="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar pb-28">
             
-            <h2 class="text-slate-500 text-[10px] uppercase font-bold ml-2 tracking-widest">Ritmo Circadiano</h2>
+            <h2 class="text-slate-500 text-[10px] uppercase font-bold ml-2 tracking-widest">Distúrbios e Patologias</h2>
 
             <div class="glass-card p-4 cursor-pointer" onclick="this.classList.toggle('expanded')">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-sun text-amber-400"></i>
-                        <span class="text-white font-medium">Ciclo Solar e Sono</span>
+                        <i class="fa-solid fa-mask text-emerald-400"></i>
+                        <span class="text-white font-medium text-sm">Apneia Obstrutiva</span>
                     </div>
                     <i class="fa-solid fa-chevron-down text-slate-600 text-xs chevron transition-transform"></i>
                 </div>
                 <div class="content-hidden text-sm text-slate-400 space-y-3">
-                    <p>O teu corpo regula-se pela luz. Ignorar o nascer e o pôr do sol causa **Desajuste Circadiano**.</p>
-                    <ul class="list-disc ml-4 space-y-1">
-                        <li><b class="text-slate-200">Sunrise:</b> A luz matinal trava a melatonina e ativa o cortisol para acordares.</li>
-                        <li><b class="text-slate-200">Sunset:</b> A ausência de luz azul sinaliza a reparação celular.</li>
-                    </ul>
-                    <div class="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20 text-xs italic">
-                        "Dormir após o nascer do sol impede o sono profundo e reparador."
-                    </div>
-                </div>
-            </div>
-
-            <h2 class="text-slate-500 text-[10px] uppercase font-bold ml-2 mt-6 tracking-widest">Distúrbios Comuns</h2>
-
-            <div class="glass-card p-4 cursor-pointer" onclick="this.classList.toggle('expanded')">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-bed text-blue-400"></i>
-                        <span class="text-white font-medium">Insónia</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-down text-slate-600 text-xs chevron transition-transform"></i>
-                </div>
-                <div class="content-hidden text-sm text-slate-400">
-                    Dificuldade em iniciar ou manter o sono. Pode ser causada por ansiedade, má higiene do sono ou excesso de ecrãs à noite. 
-                    <br><br>
-                    <span class="text-blue-300">Sintoma no Dashboard:</span> Score de Equilíbrio baixo e Duração < 6h.
+                    <p>Interrupções respiratórias causadas pelo colapso das vias aéreas. O cérebro força pequenos despertares para retomar o oxigénio.</p>
+                    <p class="text-xs text-emerald-300 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
+                        <b>Sinal Biométrico:</b> Frequência cardíaca (BPM) elevada em repouso e fragmentação extrema do sono profundo.
+                    </p>
                 </div>
             </div>
 
             <div class="glass-card p-4 cursor-pointer" onclick="this.classList.toggle('expanded')">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-mask-ventilator text-emerald-400"></i>
-                        <span class="text-white font-medium">Apneia Obstrutiva</span>
+                        <i class="fa-solid fa-brain text-rose-400"></i>
+                        <span class="text-white font-medium text-sm">Insónia Crónica</span>
                     </div>
                     <i class="fa-solid fa-chevron-down text-slate-600 text-xs chevron transition-transform"></i>
                 </div>
-                <div class="content-hidden text-sm text-slate-400">
-                    Interrupções na respiração durante o sono. O corpo entra em stress para "acordar" e respirar.
-                    <br><br>
-                    <span class="text-emerald-300">Sintoma no Dashboard:</span> Batimento cardíaco (BPM) elevado durante o repouso.
+                <div class="content-hidden text-sm text-slate-400 space-y-3">
+                    <p>Dificuldade em adormecer ou manter o sono, mantendo o sistema nervoso num estado de alerta constante.</p>
+                    <p class="text-xs text-rose-300 bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">
+                        <b>Sinal Biométrico:</b> Latência de sono prolongada e variações bruscas no batimento cardíaco noturno.
+                    </p>
                 </div>
             </div>
 
             <div class="glass-card p-4 cursor-pointer" onclick="this.classList.toggle('expanded')">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-person-walking-arrow-loop-left text-purple-400"></i>
-                        <span class="text-white font-medium">Pernas Inquietas (SPI)</span>
+                        <i class="fa-solid fa-person-walking text-purple-400"></i>
+                        <span class="text-white font-medium text-sm">Pernas Inquietas (SPI)</span>
                     </div>
                     <i class="fa-solid fa-chevron-down text-slate-600 text-xs chevron transition-transform"></i>
                 </div>
-                <div class="content-hidden text-sm text-slate-400">
-                    Necessidade incontrolável de mover as pernas, geralmente à noite.
-                    <br><br>
-                    <span class="text-purple-300">Sintoma no Dashboard:</span> Registo de "Passos" ou movimento excessivo durante o horário de sono.
+                <div class="content-hidden text-sm text-slate-400 space-y-3">
+                    <p>Urgência incontrolável de mover as pernas, geralmente ao deitar, prejudicando o início do descanso.</p>
+                    <p class="text-xs text-purple-300 bg-purple-500/10 p-2 rounded-lg border border-purple-500/20">
+                        <b>Sinal Biométrico:</b> Movimentos excessivos detetados pelos sensores de atividade logo após o deitar.
+                    </p>
+                </div>
+            </div>
+
+            <h2 class="text-slate-500 text-[10px] uppercase font-bold ml-2 mt-6 tracking-widest">Protocolo de Otimização</h2>
+
+            <div class="glass-card p-4 cursor-pointer" onclick="this.classList.toggle('expanded')">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-clock text-cyan-400"></i>
+                        <span class="text-white font-medium text-sm">Método 10-3-2-1-0</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-slate-600 text-xs chevron transition-transform"></i>
+                </div>
+                <div class="content-hidden text-[11px] text-slate-400 space-y-3">
+                    <p><b class="text-cyan-400">10h antes:</b> Corte da cafeína. Dez horas é o tempo médio que o organismo demora a eliminar o estimulante para que o cérebro consiga relaxar naturalmente ao deitar.</p>
+                    <p><b class="text-cyan-400">3h antes:</b> Sem comida ou álcool. Evita digestões pesadas e picos de insulina que travam a recuperação.</p>
+                    <p><b class="text-cyan-400">2h antes:</b> Sem trabalho. O cérebro precisa de sair do modo de alerta para o modo de relaxamento.</p>
+                    <p><b class="text-cyan-400">1h antes:</b> Sem ecrãs. A luz azul bloqueia a produção de melatonina, a hormona do sono.</p>
+                    <p><b class="text-cyan-400">0 Snooze:</b> Nunca adies o alarme. Acordar e voltar a dormir baralha o teu sistema nervoso.</p>
+                </div>
+            </div>
+
+            <h2 class="text-slate-500 text-[10px] uppercase font-bold ml-2 mt-6 tracking-widest">Sabias que? </h2>
+
+            <div class="glass-card p-4">
+                <div class="space-y-4">
+                    <div class="flex gap-3">
+                        <i class="fa-solid fa-broom text-purple-400 mt-1"></i>
+                        <p class="text-[11px] text-slate-400"><b>Limpeza Cerebral:</b> Durante o sono profundo, o teu cérebro ativa o sistema glinfático, que funciona como uma espécie de "lavagem" interna para eliminar toxinas acumuladas durante o dia. Este processo é essencial para prevenir o cansaço mental e proteger a saúde do cérebro a longo prazo.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <i class="fa-solid fa-temperature-low text-blue-300 mt-1"></i>
+                        <p class="text-[11px] text-slate-400"><b>Fator Frio:</b> A temperatura interna precisa de cair 1°C para o sono iniciar. Quartos frescos otimizam o descanso.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <i class="fa-solid fa-bolt text-amber-400 mt-1"></i>
+                        <p class="text-[11px] text-slate-400"><b>Consumo REM:</b> Durante os sonhos, o cérebro consome mais glucose e oxigénio do que enquanto estás acordado.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <i class="fa-solid fa-face-tired text-rose-400 mt-1"></i>
+                        <p class="text-[11px] text-slate-400"><b>Dívida de Sono:</b> O sono não é compensável ao fim de semana. A privação causa inflamação sistémica persistente.</p>
+                    </div>
                 </div>
             </div>
 
         </main>
 
         <nav class="bg-slate-900/95 border-t border-white/5 flex justify-around items-center h-20 px-4 relative">
-            
-            <a href="{% url 'relatorio' %}" class="flex items-center justify-center w-16 h-full">
+            <a href="{% url 'google_fit_callback' %}" class="flex items-center justify-center w-16 h-full">
                 <i class="fa-solid fa-chart-line text-slate-400 text-2xl"></i>
             </a>
 
@@ -119,9 +140,8 @@
             </a>
 
             <a href="{% url 'doencas' %}" class="flex items-center justify-center w-16 h-full">
-                <i class="fa-solid fa-circle-info text-slate-400 text-2xl"></i>
+                <i class="fa-solid fa-circle-info text-blue-400 text-2xl"></i>
             </a>
-
         </nav>
     </div>
 

@@ -7,102 +7,178 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #1e293b; display: flex; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
-        
-        .app-container { 
-            width: 100%; 
-            max-width: 414px; 
-            background-color: #0f172a; 
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 90vh;
-            position: relative;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-
+        body { background-color: #1e293b; display: flex; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; font-family: 'Inter', sans-serif; }
+        .app-container { width: 100%; max-width: 414px; background-color: #0f172a; overflow: hidden; display: flex; flex-direction: column; height: 90vh; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-radius: 1rem; }
         .glass-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.05); border-radius: 1.25rem; }
+        .input-field { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 0.75rem; padding: 0.75rem; width: 100%; font-size: 0.85rem; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         
+        {% if modo_edicao %}
+        <form action="{% url 'perfil' %}" method="POST" class="flex flex-col h-full">
+            {% csrf_token %}
+            <header class="bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/5 z-50">
+                <a href="{% url 'perfil' %}" class="text-slate-400"><i class="fa-solid fa-chevron-left"></i></a>
+                <h1 class="text-xs font-bold tracking-widest text-white uppercase opacity-90">Configurações de Saúde</h1>
+                <button type="submit" class="text-blue-400 font-bold text-sm">Salvar</button>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-5 space-y-6 no-scrollbar pb-24">
+                <div class="space-y-3">
+                    <h3 class="text-slate-500 text-[10px] uppercase font-bold ml-2 tracking-widest">Identificação</h3>
+                    <div class="glass-card p-4 space-y-4">
+                        <div>
+                            <label class="text-slate-500 text-[9px] uppercase font-bold ml-1">Nome Completo</label>
+                            <input type="text" name="user_name" value="{{ user_name }}" class="input-field mt-1">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-slate-500 text-[9px] uppercase font-bold ml-1">Sexo Biológico</label>
+                                <select name="sexo" class="input-field mt-1">
+                                    <option value="Masculino" {% if sexo == 'Masculino' %}selected{% endif %}>Masculino</option>
+                                    <option value="Feminino" {% if sexo == 'Feminino' %}selected{% endif %}>Feminino</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-slate-500 text-[9px] uppercase font-bold ml-1">Data Nascimento</label>
+                                <input type="date" name="data_nascimento" value="{{ data_nascimento }}" class="input-field mt-1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="text-slate-500 text-[10px] uppercase font-bold ml-2 tracking-widest">Biometria</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="glass-card p-4">
+                            <label class="text-slate-500 text-[9px] uppercase font-bold ml-1 text-center block">Peso (kg)</label>
+                            <input type="number" name="peso" value="{{ peso }}" class="input-field mt-1 text-center font-bold">
+                        </div>
+                        <div class="glass-card p-4">
+                            <label class="text-slate-500 text-[9px] uppercase font-bold ml-1 text-center block">Altura (cm)</label>
+                            <input type="number" name="altura" value="{{ altura }}" class="input-field mt-1 text-center font-bold">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="text-slate-500 text-[10px] uppercase font-bold ml-2 tracking-widest">Estilo de Vida</h3>
+                    <div class="glass-card p-4 space-y-4">
+                        <div>
+                            <label class="text-slate-500 text-[9px] uppercase font-bold ml-1">Nível de Atividade</label>
+                            <select name="atividade" class="input-field mt-1">
+                                <option value="Sedentário" {% if atividade == 'Sedentário' %}selected{% endif %}>Sedentário (Pouco ou nenhum ex.)</option>
+                                <option value="Moderado" {% if atividade == 'Moderado' %}selected{% endif %}>Moderado (3-5 dias/semana)</option>
+                                <option value="Atleta" {% if atividade == 'Atleta' %}selected{% endif %}>Atleta (Treino intenso diário)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-500 text-[9px] uppercase font-bold ml-1">Cronótipo</label>
+                            <select name="cronotipo" class="input-field mt-1">
+                                <option value="Matutino" {% if cronotipo == 'Matutino' %}selected{% endif %}>Matutino (Acorda cedo com energia)</option>
+                                <option value="Vespertino" {% if cronotipo == 'Vespertino' %}selected{% endif %}>Vespertino (Rende mais à noite)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="text-slate-500 text-[10px] uppercase font-bold ml-2 tracking-widest">Metas</h3>
+                    <div class="glass-card p-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-slate-300 text-xs font-bold">Horas de Sono Desejadas</span>
+                            <span class="text-blue-400 font-black" id="meta-val">{{ meta_horas }}h</span>
+                        </div>
+                        <input type="range" name="meta_horas" min="5" max="10" step="0.5" value="{{ meta_horas }}" 
+                               class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                               oninput="document.getElementById('meta-val').innerText = this.value + 'h'">
+                    </div>
+                </div>
+            </main>
+        </form>
+
+        {% else %}
         <header class="bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/5 z-50">
-            <a href="{% url 'dashboard' %}" class="text-blue-400 hover:text-blue-300">
-                <i class="fa-solid fa-chevron-left text-lg"></i>
-            </a>
-            <h1 class="text-lg font-bold tracking-tight text-white">My Profile</h1>
+            <a href="{% url 'dashboard' %}" class="text-slate-400"><i class="fa-solid fa-chevron-left text-lg"></i></a>
+            <h1 class="text-sm font-bold tracking-tight text-white uppercase opacity-90">Perfil</h1>
             <div class="w-8"></div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
-            
-            <div class="flex flex-col items-center space-y-4">
-                <div class="relative inline-block">
-                    {% if user_picture %}
-                        <img src="{{ user_picture }}" alt="Avatar" class="w-24 h-24 rounded-full border-2 border-cyan-400">
-                    {% else %}
-                        <div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center">
-                            <i class="fa-solid fa-user text-3xl text-slate-400"></i>
-                        </div>
-                    {% endif %}
+        <main class="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar pb-24">
+            <div class="flex flex-col items-center py-4">
+                <div class="w-24 h-24 rounded-full bg-blue-600/10 flex items-center justify-center border-2 border-blue-500 shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-user text-3xl text-blue-400"></i>
                 </div>
-
                 <h2 class="text-white text-xl font-bold mt-4">{{ user_name }}</h2>
+                <p class="text-slate-500 text-[10px] uppercase tracking-widest mt-1">Utilizador Ativo</p>
             </div>
 
-            <div class="space-y-3">
-                <h3 class="text-slate-500 text-[10px] uppercase font-bold ml-2">Settings</h3>
-                
-                <div class="glass-card divide-y divide-white/5 overflow-hidden">
-                    <div class="p-4 flex justify-between items-center hover:bg-white/5 transition-colors cursor-pointer">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-bell text-slate-400"></i>
-                            <span class="text-sm text-white">Sleep Notifications</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
-                    </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="glass-card p-4 text-center">
+                    <p class="text-slate-500 text-[9px] uppercase font-bold">Peso</p>
+                    <p class="text-white font-bold text-lg">{{ peso }}<span class="text-[10px] ml-0.5 opacity-50">kg</span></p>
+                </div>
+                <div class="glass-card p-4 text-center">
+                    <p class="text-slate-500 text-[9px] uppercase font-bold">Altura</p>
+                    <p class="text-white font-bold text-lg">{{ altura }}<span class="text-[10px] ml-0.5 opacity-50">cm</span></p>
+                </div>
+                <div class="glass-card p-4 text-center">
+                    <p class="text-slate-500 text-[9px] uppercase font-bold">Meta</p>
+                    <p class="text-white font-bold text-lg">{{ meta_horas }}<span class="text-[10px] ml-0.5 opacity-50">h</span></p>
+                </div>
+            </div>
 
-                    <div class="p-4 flex justify-between items-center hover:bg-white/5 transition-colors cursor-pointer">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-shield-halved text-slate-400"></i>
-                            <span class="text-sm text-white">Data Privacy</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+            <div class="glass-card p-5 space-y-4">
+                <h3 class="text-slate-500 text-[10px] uppercase font-bold tracking-widest border-b border-white/5 pb-2">Detalhes de Saúde</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-slate-500 text-[9px] uppercase font-bold">Sexo</p>
+                        <p class="text-white text-sm font-medium">{{ sexo }}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-[9px] uppercase font-bold">Nascimento</p>
+                        <p class="text-white text-sm font-medium">{{ data_nascimento }}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-[9px] uppercase font-bold">Atividade</p>
+                        <p class="text-white text-sm font-medium">{{ atividade }}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-[9px] uppercase font-bold">Cronótipo</p>
+                        <p class="text-white text-sm font-medium">{{ cronotipo }}</p>
                     </div>
                 </div>
             </div>
 
-            <div class="pt-4">
-                <a href="{% url 'logout' %}" class="w-full glass-card p-4 flex items-center justify-center gap-3 text-red-400 hover:bg-red-400/10 transition-colors border-red-400/20">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    <span class="text-sm font-bold">Log Out</span>
+            <div class="glass-card p-4">
+                <a href="?edit=1" class="flex items-center justify-between p-3 bg-blue-500/10 rounded-xl hover:bg-blue-500/20 transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-pen-to-square text-blue-400"></i>
+                        <span class="text-sm text-white font-medium">Editar Dados Pessoais</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-600 group-hover:translate-x-1 transition-transform"></i>
                 </a>
             </div>
 
+            <div class="pt-4 flex justify-center">
+                <a href="{% url 'logout' %}" class="flex items-center gap-2 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest transition-colors">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Sair da Conta
+                </a>
+            </div>
         </main>
+        {% endif %}
 
-        <nav class="bg-slate-900/95 border-t border-white/5 flex justify-around items-center h-20 px-4 relative">
-            
-            <a href="{% url 'relatorio' %}" class="flex items-center justify-center w-16 h-full">
-                <i class="fa-solid fa-chart-line text-slate-400 text-2xl"></i>
-            </a>
-
-            <a href="{% url 'dashboard' %}" class="relative -top-6 flex flex-col items-center">
-                <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-[#0f172a]">
-                    <i class="fa-solid fa-house text-white text-2xl"></i>
-                </div>
-            </a>
-
-            <a href="{% url 'doencas' %}" class="flex items-center justify-center w-16 h-full">
-                <i class="fa-solid fa-circle-info text-slate-400 text-2xl"></i>
-            </a>
-
+        <nav class="bg-slate-900/95 border-t border-white/5 flex justify-around items-center h-20 px-4 relative flex-shrink-0">
+            <a href="{% url 'relatorio' %}" class="flex items-center justify-center w-16 h-full"><i class="fa-solid fa-chart-line text-slate-400 text-2xl"></i></a>
+            <a href="{% url 'dashboard' %}" class="relative -top-6"><div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-[#0f172a]"><i class="fa-solid fa-house text-white text-2xl"></i></div></a>
+            <a href="{% url 'doencas' %}" class="flex items-center justify-center w-16 h-full"><i class="fa-solid fa-circle-info text-slate-400 text-2xl"></i></a>
         </nav>
     </div>
-
 </body>
 </html>
