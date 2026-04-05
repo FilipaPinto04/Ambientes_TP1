@@ -419,7 +419,8 @@ def dashboard(request):
     # --- 7. Sleep Heart Rate ---
     bpm_sono_data = buscar_bpm_sono(fit_service, sessoes_sono)
 
-    verificar_ritmo_e_notificar(regularity_data, request) ##############################
+    from .notifications import verificar_ritmo_e_notificar
+    verificar_ritmo_e_notificar(regularity_data, request)
 
     return render(request, 'sleep_analysis/dashboard.html', {
         'analise':        analise_final,
@@ -862,7 +863,7 @@ def relatorio_sono(request):
 
     # --- 1. Janela de Tempo ---
     now_local   = datetime.datetime.now(LOCAL_TZ)
-    start_local = now_local - datetime.timedelta(days=7)
+    start_local = now_local - datetime.timedelta(days=365)
 
     # --- 2. Todas as sessões de sono (sem sestas) ---
     sessions_res = fit_service.users().sessions().list(

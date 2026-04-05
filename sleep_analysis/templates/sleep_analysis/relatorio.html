@@ -66,24 +66,31 @@
 <div class="app-container">
 
     <!-- ── HEADER ── -->
-    <header class="bg-slate-900/80 backdrop-blur-md p-4 grid grid-cols-3 items-center border-b border-white/5 z-50 flex-shrink-0">
-        
-        <div class="flex justify-end">
+    <header class="bg-slate-900/80 backdrop-blur-md p-4 grid grid-cols-[1fr_auto_1fr] items-center border-b border-white/5 z-50 flex-shrink-0">
+    
+        <div class="flex justify-end pr-4">
             {% if tem_anterior %}
-            <a href="?noite={{ idx|add:'1' }}" class="p-2 hover:text-white transition-colors text-slate-500">
+            <a href="?noite={{ idx|add:'1' }}" class="text-slate-500 hover:text-white transition-colors">
                 <i class="fa-solid fa-chevron-left text-lg"></i>
             </a>
             {% endif %}
         </div>
 
-        <div class="text-center min-w-max px-2">
-            <h1 class="text-sm font-bold text-white whitespace-nowrap">{{ label_noite }}</h1>
-            <p class="text-[10px] text-slate-500 mt-0.5">{{ start_fmt }} → {{ end_fmt }}</p>
+        <div class="relative flex flex-col items-center cursor-pointer min-w-[160px]">
+            <div class="flex items-center gap-2 pointer-events-none">
+                <i class="fa-solid fa-calendar-day text-blue-400 text-xs"></i>
+                <h1 class="text-sm font-bold text-white whitespace-nowrap">{{ label_noite }}</h1>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5 pointer-events-none">{{ start_fmt }} → {{ end_fmt }}</p>
+
+            <input type="date" id="datePicker" 
+                class="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
+                onchange="navigateToDate(this.value)">
         </div>
 
-        <div class="flex justify-start">
+        <div class="flex justify-start pl-4">
             {% if tem_seguinte %}
-            <a href="?noite={{ idx|add:'-1' }}" class="p-2 hover:text-white transition-colors text-slate-500">
+            <a href="?noite={{ idx|add:'-1' }}" class="text-slate-500 hover:text-white transition-colors">
                 <i class="fa-solid fa-chevron-right text-lg"></i>
             </a>
             {% endif %}
@@ -581,6 +588,42 @@
                 });
             }, 200);
         });
+
+   function navigateToDate(selectedDateStr) {
+        if (!selectedDateStr) return;
+
+        const [year, month, day] = selectedDateStr.split('-').map(Number);
+
+        const today = new Date();
+
+        // Função que converte uma data em "número de dias absoluto"
+        function toDays(y, m, d) {
+            return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+        }
+
+        const todayDays = toDays(
+            today.getFullYear(),
+            today.getMonth() + 1,
+            today.getDate()
+        );
+
+        const selectedDays = toDays(year, month, day);
+
+        const diffDays = todayDays - selectedDays;
+
+        console.log("Selecionado:", selectedDateStr);
+        console.log("Hoje:", today.toISOString().slice(0, 10));
+        console.log("Diff:", diffDays);
+
+        if (diffDays >= 0) {
+            window.location.href = `?noite=${diffDays}`;
+        } else {
+            alert("Não existem dados para o futuro.");
+        }
+    }
+    document.querySelector('.relative.cursor-pointer').addEventListener('click', () => {
+        document.getElementById('datePicker').showPicker();
+    });
 </script>
 </body>
 </html>

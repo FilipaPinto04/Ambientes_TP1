@@ -1,40 +1,53 @@
 import requests
 
+def disparar_alerta_adafruit():
+    """Atuação: Envia o sinal para a nuvem Adafruit IO."""
+    ADAFRUIT_USERNAME = "ambientes_inteligentes_tp1"
+    ADAFRUIT_AIO_KEY = "aio_kFqb95FpswUZSZQ66rNoXZXnEffJ"
+    FEED_NAME = "sensorfeed"
 
-def disparar_alerta_ifttt():
-    """Envia o trigger para o Webhook do IFTTT."""
-    # CHAVE CORRIGIDA: Troquei o número 1 pela letra l minúscula
-    ifttt_key = "mVMNgkV2Uemn6GARDbRYgyTkApH0kfKuWl0Bgq85e5O"
-    event_name = "desvio_ritmo" 
-    
-    url = f"https://maker.ifttt.com/trigger/{event_name}/with/key/{ifttt_key}"
-    
+    url = f"https://io.adafruit.com/api/v2/{ADAFRUIT_USERNAME}/feeds/{FEED_NAME}/data"
+    headers = {"X-AIO-Key": ADAFRUIT_AIO_KEY}
+    payload = {"value": "1"}
+
     try:
-        response = requests.post(url, timeout=5)
+        response = requests.post(url, json=payload, headers=headers, timeout=5)
         if response.status_code == 200:
-            print("🚀 Notificação IFTTT enviada com sucesso!")
+            print("🚀 Atuação: Sinal enviado para Adafruit IO!")
         else:
-            print(f"❌ Erro IFTTT: {response.text}")
+            print(f"❌ Erro Adafruit: {response.status_code}")
     except Exception as e:
         print(f"⚠️ Erro de rede: {e}")
 
 def verificar_ritmo_e_notificar(regularity_data, request):
-    """Analisa os dados e decide se dispara o alerta."""
-    if len(regularity_data) < 2:
+    """
+    Reasoning: Só dispara se a hora de deitar de ontem 
+    for 2h ou mais tarde que a média da semana.
+    """
+    # Precisamos de pelo menos 2 noites para comparar (Média vs Ontem)
+    if not regularity_data or len(regularity_data) < 2:
+        print("ℹ️ Dados insuficientes para calcular desvio de ritmo.")
         return
 
-    noite_ontem = regularity_data[-1]
-    deitar_anteriores = [d['sleep'] for d in regularity_data[:-1]]
-    
-    deitar_ajustado = [(h + 24 if h < 12 else h) for h in deitar_anteriores]
-    media_deitar_semanal = sum(deitar_ajustado) / len(deitar_ajustado)
-    
-    hora_ontem = noite_ontem['sleep']
-    if hora_ontem < 12: 
-        hora_ontem += 24
-        
-    desvio_ritmo = hora_ontem - media_deitar_semanal
-    
-    if desvio_ritmo >= 2 and not request.session.get('notif_enviada'):
-        disparar_alerta_ifttt()
-        request.session['notif_enviada'] = True
+    # 1. Calcular a média da hora de deitar (excluindo a noite mais recente)
+    # regularity_data[-1] é a última noite (ontem)
+    noites_anteriores = regularity_data[:-1]
+    soma_deitar = sum(noite['sleep'] for noite in noites_anteriores)
+    media_deitar = soma_deitar / len(noites_anteriores)
+
+    # 2. Obter a hora de deitar da última noite
+    ontem_deitar = regularity_data[-1]['sleep']
+
+    # 3. Calcular o desvio (Diferença entre ontem e a média)
+    desvio = ontem_deitar - media_deitar
+
+    print(f"🧠 Reasoning: Média: {media_deitar:.2f}h | Ontem: {ontem_deitar:.2f}h | Desvio: {desvio:.2f}h")
+
+    # --- ALTERA AQUI: de 2.0 para 1.0 ---
+    if desvio >= 1.0:
+        if not request.session.get('alerta_enviado'):
+            print("🚨 ALERTA: Desvio de 1h detetado! A disparar atuação...")
+            disparar_alerta_adafruit()
+            request.session['alerta_enviado'] = True
+    else:
+        print("✅ Ritmo estável (desvio inferior a 1h).")
