@@ -13,6 +13,7 @@ from googleapiclient.discovery import build
 from collections import defaultdict
 from .notifications import verificar_ritmo_e_notificar
 
+
 # CONFIGURAÇÕES GLOBAIS
 
 SCOPES = [
@@ -620,17 +621,14 @@ def dashboard(request):
     fit_service = build('fitness', 'v1', credentials=credentials)
     gf_service  = GoogleFitService(credentials)
 
-    # --- 1. Janela de Tempo ---
     now_local   = datetime.datetime.now(LOCAL_TZ)
     start_local = now_local - datetime.timedelta(days=365)
     start_ms    = int(start_local.timestamp() * 1000)
     end_ms      = int(now_local.timestamp() * 1000)
 
-    # --- 2. Localização e Clima ---
     lat, lon = gf_service.fetch_last_location()
     clima    = get_weather_data(lat, lon)
 
-    # --- 3. Extração de Dados ---
     todos_bpms     = buscar_bpm_detalhado(fit_service, start_ms, end_ms)
     buckets_passos = buscar_passos_agregados(fit_service, start_ms, end_ms)
 
@@ -645,14 +643,11 @@ def dashboard(request):
         and (int(s['endTimeMillis']) - int(s['startTimeMillis'])) / 3_600_000 >= 3.0
     ]
 
-    # --- 4. Gráfico Semanal ---
     duracoes_reais = buscar_duracao_real_sono(fit_service, sessoes_sono, LOCAL_TZ)
     sono           = processar_sono_semanal(sessoes_sono, duracoes_reais, LOCAL_TZ)
 
-    # --- 5. Análise Clínica ---
     analise_final = processar_analise_clinica(sessoes_sono, buckets_passos, todos_bpms, clima)
 
-    # --- 6. Sleep Regularity ---
     def hora_para_decimal(dt):
         h = dt.hour + dt.minute / 60
         return round(h - 24 if h > 18 else h, 2)
@@ -673,10 +668,8 @@ def dashboard(request):
             'wake_fmt':  end_dt.strftime("%H:%M"),
         })
 
-    # --- 7. Sleep Heart Rate ---
     bpm_sono_data = buscar_bpm_sono(fit_service, sessoes_sono)
 
-    # --- 8. Notificações ---
     verificar_ritmo_e_notificar(regularity_data, request)
 
     return render(request, 'sleep_analysis/dashboard.html', {
